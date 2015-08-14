@@ -48,6 +48,9 @@ MDP 3.0 (MDP3) messages from a pcap file.  For help with using mdp_decoder.py:
  
     mdp_decoder.py --help
 
+An SBE template for CME Group MDP 3.0 market data can be found at 
+ftp://ftp.cmegroup.com/SBEFix/Production/Templates/templates_FixBinary.xml
+
 Example, output:
 
     :packet - timestamp: 2015-06-25 09:45:01.924492 sequence_number: 93696727 sending_time: 1435243501924423666 
