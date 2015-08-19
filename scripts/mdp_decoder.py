@@ -84,7 +84,7 @@ def process_command_line():
 
     # check number of arguments, verify values, etc.:
     if not os.path.isfile(args.schema):
-        parser.error("sbe schema xml file '{}' not found".format(args.schema_filename))
+        parser.error("sbe schema xml file '{}' not found".format(args.schema))
 
     return args
 
