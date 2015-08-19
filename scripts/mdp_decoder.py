@@ -6,8 +6,6 @@ Parse a pcap file containing CME MDP3 market data based on a SBE xml schema file
 
 import sys
 import os.path
-from optparse import OptionParser
-from optparse import TitledHelpFormatter
 from struct import unpack_from
 from datetime import datetime
 from sbedecoder import SBESchema
@@ -39,14 +37,14 @@ def parse_mdp3_packet(mdp_parser, ts, data, skip_fields):
                 print('::::{}'.format(group_fields))
 
 
-def process_file(options, pcap_filename):
+def process_file(args, pcap_filename):
     # Read in the schema xml as a dictionary and construct the various schema objects
     mdp_schema = SBESchema()
-    mdp_schema.parse(options.schema_filename)
+    mdp_schema.parse(args.schema)
     msg_factory = SBEMessageFactory(mdp_schema)
     mdp_parser = SBEParser(msg_factory)
 
-    skip_fields = set(options.skip_fields.split(','))
+    skip_fields = set(args.skip_fields.split(','))
 
     with gzip.open(pcap_filename) if pcap_filename.endswith('.gz') else open(pcap_filename) as pcap:
         pcap_reader = dpkt.pcap.Reader(pcap)
@@ -64,53 +62,36 @@ def process_file(options, pcap_filename):
                         print('could not parse packet number {}'.format(packet_number))
 
 
-def process_command_line(argv):
-    """
-    Return a 2-tuple: (options object, args list).
-    `argv` is a list of arguments, or `None` for ``sys.argv[1:]``.
-    """
-    if argv is None:
-        argv = sys.argv[1:]
+def process_command_line():
+    from argparse import ArgumentParser
 
-    # initialize the parser object:
-    parser = OptionParser(
-        formatter=TitledHelpFormatter(width=120),
-        add_help_option=None,
-        version='%prog  0.1',
-        usage='usage: %prog [options] pcapfile'
-    )
+    parser = ArgumentParser(
+        description="Parse a pcap file containing CME MDP3 market data based on a SBE xml schema file.",
+        version="0.1")
 
-    parser.description = 'Parse a pcap file containing CME MDP3 market data based on a SBE xml schema file.'
+    parser.add_argument("pcapfile",
+        help="Name of the pcap file to process")
 
-    parser.add_option("-s", "--schema", dest="schema_filename", default='templates_FixBinary.xml',
-                      help="Don't print messages to standard out")
+    parser.add_argument("-s", "--schema", default='templates_FixBinary.xml',
+        help="Name of the SBE schema xml file")
 
     default_skip_fields = 'message_size,block_length,template_id,schema_id,version'
 
-    parser.add_option("-f", "--skip-fields", dest="skip_fields", default=default_skip_fields,
-                      help="Don't print these message fields (default={})".format(default_skip_fields))
+    parser.add_argument("-f", "--skip-fields", default=default_skip_fields,
+        help="Don't print these message fields (default={})".format(default_skip_fields))
 
-    parser.add_option(  # customized description; put --help last
-        '-h', '--help', action='help', help='Show this help message and exit.')
-
-    options, args = parser.parse_args(argv)
+    args = parser.parse_args()
 
     # check number of arguments, verify values, etc.:
-    if not os.path.isfile(options.schema_filename):
-        parser.error("schema file '{}' not found".format(options.schema_filename))
+    if not os.path.isfile(args.schema):
+        parser.error("sbe schema xml file '{}' not found".format(args.schema_filename))
 
-    if len(args) != 1:
-        parser.error("no file specified")
-
-    if not os.path.isfile(argv[0]):
-        parser.error("pcap file '{}' not found".format(argv[0]))
-
-    return options, args
+    return args
 
 
 def main(argv=None):
-    options, args = process_command_line(argv)
-    process_file(options, args[0])
+    args = process_command_line()
+    process_file(args, args.pcapfile)
     return 0  # success
 
 
