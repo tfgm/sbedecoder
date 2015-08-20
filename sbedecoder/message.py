@@ -175,7 +175,7 @@ class SBERepeatingGroup:
 
 
 class SBERepeatingGroupIterator(object):
-    def __init__(self, name, block_length_field, num_in_group_field, group_fields):
+    def __init__(self, name, block_length_field, num_in_group_field, dimension_size, group_fields):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
@@ -188,6 +188,7 @@ class SBERepeatingGroupIterator(object):
         self.num_groups_read = 0
         self.group_start_offset = 0
         self.group_fields = group_fields
+        self.dimension_size = dimension_size
 
     def wrap(self, msg_buffer, msg_offset, group_start_offset):
         self.msg_buffer = msg_buffer
@@ -210,8 +211,7 @@ class SBERepeatingGroupIterator(object):
 
     def next(self):
         if self.num_groups_read < self.num_groups:
-            group_offset = self.group_start_offset + self.block_length * self.num_groups_read + \
-                self.block_length_field.field_length + self.num_in_group_field.field_length
+            group_offset = self.group_start_offset + self.block_length * self.num_groups_read + self.dimension_size
             group = SBERepeatingGroup(self.group_fields)
             group.wrap(self.msg_buffer, self.msg_offset, group_offset)
             self.num_groups_read += 1

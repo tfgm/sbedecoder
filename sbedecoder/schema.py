@@ -300,6 +300,8 @@ class SBESchema(object):
                         block_field_offset += primitive_type_size
                     elif child['name'] == 'numInGroup':
                         primitive_type = child['primitive_type']
+                        if 'offset' in child:
+                            block_field_offset = int(child['offset'])
                         primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
                         num_in_group_field = TypeMessageField(convert_to_underscore(child['name']),
                                                               child['name'], endian+primitive_type_fmt,
@@ -314,7 +316,8 @@ class SBESchema(object):
                     group_fields.append(group_field)
 
                 repeating_group = SBERepeatingGroupIterator(group_name, block_length_field,
-                                                            num_in_group_field, group_fields)
+                                                            num_in_group_field, block_field_offset,
+                                                            group_fields)
                 repeating_groups.append(repeating_group)
 
             for repeating_group in repeating_groups:
