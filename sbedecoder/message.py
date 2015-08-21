@@ -1,4 +1,4 @@
-from struct import unpack_from
+from struct import unpack_from, unpack
 import math
 
 
@@ -33,7 +33,7 @@ class SBEMessageField(object):
 
 class TypeMessageField(SBEMessageField):
     def __init__(self, name, description, unpack_fmt, field_offset, field_length,
-                 optional=False, null_value=None, constant=None):
+                 optional=False, null_value=None, constant=None, is_string_type=False):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.description = description
@@ -43,6 +43,7 @@ class TypeMessageField(SBEMessageField):
         self.optional = optional
         self.null_value = null_value
         self.constant = constant
+        self.is_string_type = is_string_type
 
     @property
     def value(self):
@@ -53,14 +54,21 @@ class TypeMessageField(SBEMessageField):
             if _raw_value == self.null_value:
                 return None
 
+        # If this is a string type, strip any null characters
+        if self.is_string_type:
+            parts = _raw_value.split('\0', 1)
+            return parts[0]
+
         return _raw_value
 
     @property
     def raw_value(self):
         if self.constant is not None:
             return self.constant
+
         _raw_value = unpack_from(self.unpack_fmt, self.msg_buffer,
                                  self.msg_offset + self.relative_offset + self.field_offset)[0]
+
         return _raw_value
 
 
@@ -199,8 +207,7 @@ class SBERepeatingGroupIterator(object):
         self.num_in_group_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         self.block_length = self.block_length_field.value
         self.num_groups = self.num_in_group_field.value
-        return self.block_length_field.field_length + self.num_in_group_field.field_length + \
-            self.block_length * self.num_groups
+        return self.dimension_size + self.block_length * self.num_groups
 
     def __iter__(self):
         self.num_groups_read = 0

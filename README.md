@@ -62,6 +62,14 @@ Example, output:
     ::::md_entry_px: 18792.0 ({'mantissa': 187920000000, 'exponent': -7}) md_entry_size: 1 security_id: 559884 rpt_seq: 2666380 number_of_orders: 1 md_price_level: 1 md_update_action: Delete (2) md_entry_type: Bid (0) 
     ::::md_entry_px: 18746.0 ({'mantissa': 187460000000, 'exponent': -7}) md_entry_size: 6 security_id: 559884 rpt_seq: 2666381 number_of_orders: 1 md_price_level: 10 md_update_action: New (0) md_entry_type: Bid (0) 
 
+mdp_book_builder.py
+--------------
+
+mdp_book_builder.py serves as an example of using the sbedecoder package to build limit orderbooks for a given contract.
+
+For help with using mdp_book_builder.py:
+
+    mdp_book_builder.py --help
 
 Performance
 ----------
