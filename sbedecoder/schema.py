@@ -90,6 +90,8 @@ class SBESchema(object):
         field_description = field_definition['description']
         field_type = self.type_map[field_definition['type']]
         field_type_type = field_type['type']
+        field_semantic_type = field_type.get('semantic_type', None)
+        is_string_type = (field_semantic_type == 'String')
 
         message_field = None
         if field_type_type == 'type':
@@ -105,8 +107,10 @@ class SBESchema(object):
             field_length = field_type.get('length', None)
             if field_length is not None:
                 field_length = int(field_length)
-                for i in xrange(field_length):
-                    unpack_fmt += primitive_type_fmt
+                if is_string_type:
+                    unpack_fmt += '%ss' % (str(field_length), )
+                else:
+                    unpack_fmt += '%s%s' % (str(field_length), primitive_type_fmt)
             else:
                 # Field length is just the primitive type length
                 field_length = primitive_type_size
@@ -131,7 +135,8 @@ class SBESchema(object):
             message_field = TypeMessageField(field_name, field_description,
                                              unpack_fmt, field_offset,
                                              field_length, null_value=null_value,
-                                             constant=constant, optional=optional)
+                                             constant=constant, optional=optional,
+                                             is_string_type=is_string_type)
         elif field_type_type == 'enum':
             encoding_type = field_type['encoding_type']
             encoding_type_type = self.type_map[encoding_type]
