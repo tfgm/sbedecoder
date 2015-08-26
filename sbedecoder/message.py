@@ -1,4 +1,4 @@
-from struct import unpack_from, unpack
+from struct import unpack_from
 import math
 
 
@@ -32,8 +32,10 @@ class SBEMessageField(object):
 
 
 class TypeMessageField(SBEMessageField):
-    def __init__(self, name, description, unpack_fmt, field_offset, field_length,
-                 optional=False, null_value=None, constant=None, is_string_type=False):
+    def __init__(self, name=None, description=None,
+                 unpack_fmt=None, field_offset=None,
+                 field_length=None, optional=False,
+                 null_value=None, constant=None, is_string_type=False):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.description = description
@@ -73,7 +75,8 @@ class TypeMessageField(SBEMessageField):
 
 
 class SetMessageField(SBEMessageField):
-    def __init__(self, name, description, unpack_fmt, field_offset, choices, field_length):
+    def __init__(self, name=None, description=None, unpack_fmt=None, field_offset=None,
+                 choices=None, field_length=None):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.description = description
@@ -105,7 +108,8 @@ class SetMessageField(SBEMessageField):
 
 
 class EnumMessageField(SBEMessageField):
-    def __init__(self, name, description, unpack_fmt, field_offset, enum_values, field_length):
+    def __init__(self, name=None, description=None, unpack_fmt=None, field_offset=None,
+                 enum_values=None, field_length=None):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.description = description
@@ -129,7 +133,8 @@ class EnumMessageField(SBEMessageField):
 
 
 class CompositeMessageField(SBEMessageField):
-    def __init__(self, name, description, field_offset, field_length, parts, float_value=False):
+    def __init__(self, name=None, description=None, field_offset=None, field_length=None,
+                 parts=None, float_value=False):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.description = description
@@ -183,7 +188,7 @@ class SBERepeatingGroup:
 
 
 class SBERepeatingGroupIterator(object):
-    def __init__(self, name, block_length_field, num_in_group_field, dimension_size, group_fields):
+    def __init__(self, name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, group_fields=None):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
@@ -228,19 +233,23 @@ class SBERepeatingGroupIterator(object):
 
 
 class SBEMessage(object):
-    def __init__(self, msg_buffer, msg_offset):
+    def __init__(self):
+        self.name = self.__class__.__name__
+        self.msg_buffer = None
+        self.msg_offset = None
+
+    def wrap(self, msg_buffer, msg_offset):
+        # Wrap the fields for decoding
         self.msg_buffer = msg_buffer
         self.msg_offset = msg_offset
-        self.name = self.__class__.__name__
 
-        # Wrap the fields for decoding
         for field in self.fields:
             field.wrap(msg_buffer, msg_offset)
 
         # Wrap the groups for decoding
         group_offset = self.schema_block_length + self.header_size
-        for iterator in self.iterators:
-            group_offset += iterator.wrap(msg_buffer, msg_offset, group_offset)
+        for group_iterator in self.iterators:
+            group_offset += group_iterator.wrap(msg_buffer, msg_offset, group_offset)
 
     def __str__(self):
         return '%s' % (self.__class__.__name__,)
@@ -254,5 +263,6 @@ class SBEMessageFactory(object):
         # Peek at the template id to figure out what class to build
         template_id = unpack_from('<H', msg_buffer, offset+4)[0]
         message_type = self.schema.get_message_type(template_id)
-        message = message_type(msg_buffer, offset)
+        message = message_type()
+        message.wrap(msg_buffer, offset)
         return message

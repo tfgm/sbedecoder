@@ -71,6 +71,7 @@ class SBESchema(object):
                     for child in elem.getchildren():
                         if child.tag == 'field':
                             message_field = dict((convert_to_underscore(x[0]), x[1]) for x in child.items())
+                            message_field['converted_name'] = convert_to_underscore(message_field['name'])
                             message_fields.append(message_field)
                         elif child.tag == 'group':
                             message_group = dict((convert_to_underscore(x[0]), x[1]) for x in child.items())
@@ -79,6 +80,7 @@ class SBESchema(object):
                                 group_field = dict((convert_to_underscore(x[0]), x[1]) for x in group_child.items())
                                 group_fields.append(group_field)
                             message_group['fields'] = group_fields
+                            message_group['converted_name'] = convert_to_underscore(message_group['name'])
                             message_groups.append(message_group)
                     message_definition['fields'] = message_fields
                     message_definition['groups'] = message_groups
@@ -132,9 +134,9 @@ class SBESchema(object):
             if 'null_value' in field_type:
                 null_value = long(field_type['null_value'])
 
-            message_field = TypeMessageField(field_name, field_description,
-                                             unpack_fmt, field_offset,
-                                             field_length, null_value=null_value,
+            message_field = TypeMessageField(name=field_name, description=field_description,
+                                             unpack_fmt=unpack_fmt, field_offset=field_offset,
+                                             field_length=field_length, null_value=null_value,
                                              constant=constant, optional=optional,
                                              is_string_type=is_string_type)
         elif field_type_type == 'enum':
@@ -160,8 +162,11 @@ class SBESchema(object):
                 unpack_fmt += primitive_type_fmt
 
             enum_values = field_type['children']
-            message_field = EnumMessageField(field_name, field_description, unpack_fmt,
-                                             field_offset, enum_values, field_length)
+            message_field = EnumMessageField(name=field_name, description=field_description,
+                                             unpack_fmt=unpack_fmt,
+                                             field_offset=field_offset,
+                                             enum_values=enum_values,
+                                             field_length=field_length)
         elif field_type_type == 'set':
             encoding_type = field_type['encoding_type']
             encoding_type_type = self.type_map[encoding_type]
@@ -222,16 +227,18 @@ class SBESchema(object):
                 if child['name'] == 'mantissa':
                     float_composite = True
 
-                composite_field = TypeMessageField(child['name'], child['description'],
-                                                   unpack_fmt, field_offset, primitive_type_size,
+                composite_field = TypeMessageField(name=child['name'], description=child['description'],
+                                                   unpack_fmt=unpack_fmt, field_offset=field_offset,
+                                                   field_length=primitive_type_size,
                                                    null_value=null_value, constant=constant,
                                                    optional=optional)
                 field_offset += primitive_type_size
                 field_length += primitive_type_size
                 composite_parts.append(composite_field)
  
-            message_field = CompositeMessageField(field_name, field_description,
-                                                  field_offset, field_length, composite_parts, 
+            message_field = CompositeMessageField(name=field_name, description=field_description,
+                                                  field_offset=field_offset, field_length=field_length,
+                                                  parts=composite_parts,
                                                   float_value=float_composite)
         return message_field
 
@@ -245,17 +252,18 @@ class SBESchema(object):
         # Now construct each message with its expected field types
         for message in self.messages:
             field_offset = 0
+        
             # All messages start with a message size field
-            message_template_id = int(message['id'])
+            message_id = int(message['id'])
             schema_block_length = int(message['block_length'])
-            message_type = type(message['description'], (SBEMessage,), {'template_id': message_template_id,
+            message_type = type(message['description'], (SBEMessage,), {'message_id': message_id,
                                                                         'schema_block_length': schema_block_length})
 
             message_fields = []
             # All messages start with a message size field
-            message_size_field = TypeMessageField('message_size',
-                                                  "Header Message Size",
-                                                  '<H', field_offset, 2)
+            message_size_field = TypeMessageField(name='message_size',
+                                                  description="Header Message Size",
+                                                  unpack_fmt='<H', field_offset=field_offset, field_length=2)
             field_offset += message_size_field.field_length
             message_fields.append(message_size_field)
 
@@ -263,9 +271,11 @@ class SBESchema(object):
             message_header_type = self.type_map['messageHeader']
             for header_field_type in message_header_type.get('children', []):
                 primitive_type_fmt, primitive_type_size = self.primitive_type_map[header_field_type['primitive_type']]
-                message_header_field = TypeMessageField(convert_to_underscore(header_field_type['name']),
-                                                        'Header ' + header_field_type['name'],
-                                                        primitive_type_fmt, field_offset, primitive_type_size)
+                message_header_field = TypeMessageField(name=convert_to_underscore(header_field_type['name']),
+                                                        description='Header ' + header_field_type['name'],
+                                                        unpack_fmt=primitive_type_fmt,
+                                                        field_offset=field_offset,
+                                                        field_length=primitive_type_size)
                 field_offset += message_header_field.field_length
                 message_fields.append(message_header_field)
 
@@ -297,20 +307,22 @@ class SBESchema(object):
                     if child['name'] == 'blockLength':
                         primitive_type = child['primitive_type']
                         primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
-                        block_length_field = TypeMessageField(convert_to_underscore(child['name']),
-                                                              child['name'],
-                                                              endian+primitive_type_fmt,
-                                                              block_field_offset,
-                                                              primitive_type_size)
+                        block_length_field = TypeMessageField(name=convert_to_underscore(child['name']),
+                                                              description=child['name'],
+                                                              unpack_fmt=endian+primitive_type_fmt,
+                                                              field_offset=block_field_offset,
+                                                              field_length=primitive_type_size)
                         block_field_offset += primitive_type_size
                     elif child['name'] == 'numInGroup':
                         primitive_type = child['primitive_type']
                         if 'offset' in child:
                             block_field_offset = int(child['offset'])
                         primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
-                        num_in_group_field = TypeMessageField(convert_to_underscore(child['name']),
-                                                              child['name'], endian+primitive_type_fmt,
-                                                              block_field_offset, primitive_type_size)
+                        num_in_group_field = TypeMessageField(name=convert_to_underscore(child['name']),
+                                                              description=child['name'],
+                                                              unpack_fmt=endian+primitive_type_fmt,
+                                                              field_offset=block_field_offset,
+                                                              field_length=primitive_type_size)
                         block_field_offset += primitive_type_size
 
                 group_field_offset = 0
@@ -320,13 +332,18 @@ class SBESchema(object):
                     group_field_offset += group_field.field_length
                     group_fields.append(group_field)
 
-                repeating_group = SBERepeatingGroupIterator(group_name, block_length_field,
-                                                            num_in_group_field, block_field_offset,
-                                                            group_fields)
+                repeating_group = SBERepeatingGroupIterator(name=group_name, block_length_field=block_length_field,
+                                                            num_in_group_field=num_in_group_field,
+                                                            dimension_size=block_field_offset,
+                                                            group_fields=group_fields)
                 repeating_groups.append(repeating_group)
 
             for repeating_group in repeating_groups:
                 setattr(message_type, repeating_group.name, repeating_group)
             setattr(message_type, 'iterators', repeating_groups)
 
-            self.message_map[message_template_id] = message_type
+            self.message_map[message_id] = message_type
+
+    def load(self, messages):
+        self.messages = messages
+        self.message_map = dict((m.message_id, m) for m in messages)

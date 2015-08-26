@@ -1,3 +1,6 @@
+# Ignore the generator generated.py file
+generator/generated.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

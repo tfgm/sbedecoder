@@ -1,0 +1,152 @@
+%if generation_date:
+# Generated @ ${generation_date}
+%endif
+
+%if docstring:
+'''
+
+${docstring}
+
+'''
+%endif
+
+from sbedecoder.message import SBEMessage, SBERepeatingGroupIterator
+from sbedecoder.message import TypeMessageField, EnumMessageField, CompositeMessageField, SetMessageField
+
+## Build a class definition for each message that is defined
+%if messages:
+%for message_name, message_def in messages.items():
+${make_message_class(message_def)}
+%endfor
+%endif
+
+## Build the list of messages that are supported in this module
+%if messages:
+__messages__ = [
+%for message_key in messages.keys():
+    ${message_key | n},
+%endfor
+]
+%else:
+__messages__ = []
+%endif
+
+<%def name="make_message_class(message_def)">
+class ${message_def.name}(${message_def.base_classes}):
+    %if message_def.attributes:
+    %for name, value in message_def.attributes.__dict__.items():
+    ${name} = ${value}
+    %endfor
+    %endif
+
+    def __init__(self):
+        super(${message_def.name}, self).__init__()
+
+        # Fields
+        %if message_def.fields:
+        %for field in message_def.fields:
+        %if field.type == 'CompositeMessageField':
+        self.${field.name} = ${field.type}(name='${field.name}',
+                                           field_length=${field.kwargs.field_length},
+                                           field_offset=${field.kwargs.field_offset},
+                                           float_value=${field.kwargs.float_value},
+                                           description='''${field.kwargs.description}''',
+                                           parts=[
+                                               %for part in field.kwargs.parts:
+                                               ${part.type}(${str(part.kwargs)}),
+                                               %endfor
+                                           ])
+        %elif field.type == 'EnumMessageField':
+        self.${field.name} = ${field.type}(name='${field.name}',
+                                           unpack_fmt='${field.kwargs.unpack_fmt}',
+                                           description='''${field.kwargs.description}''',
+                                           field_offset=${field.kwargs.field_offset},
+                                           field_length=${field.kwargs.field_length},
+                                           enum_values=[
+                                               %for enum_val in field.kwargs.enum_values:
+                                               ${enum_val.__dict__},
+                                               %endfor
+                                           ])
+        %elif field.type == 'SetMessageField':
+        self.${field.name} = ${field.type}(name='${field.name}',
+                                           unpack_fmt='${field.kwargs.unpack_fmt}',
+                                           description='''${field.kwargs.description}''',
+                                           field_offset=${field.kwargs.field_offset},
+                                           field_length=${field.kwargs.field_length},
+                                           choices=[
+                                            %for choice_val in field.kwargs.choices:
+                                            ${choice_val.__dict__},
+                                            %endfor
+                                           ])
+        %else:
+        self.${field.name} = ${field.type}(${str(field.kwargs)})
+        %endif:
+        %endfor
+
+        self.fields = [
+        %for field in message_def.fields:
+            self.${field.name},
+        %endfor
+        ]
+        %else:
+        self.fields = []
+        %endif
+
+        # Group Iterators
+        %if message_def.iterators:
+        %for group in message_def.iterators:
+        self.${group.name} = ${group.type}(name='${group.name}',
+                                           dimension_size=${group.dimension_size},
+                                           block_length_field=${group.block_length_field.type}(${str(group.block_length_field.kwargs)}),
+                                           num_in_group_field=${group.num_in_group_field.type}(${str(group.num_in_group_field.kwargs)}),
+                                           group_fields=[
+                                               %for field in group.group_fields:
+                                               %if field.type == 'CompositeMessageField':
+                                               ${field.type}(name='${field.name}',
+                                                            field_length=${field.kwargs.field_length},
+                                                            field_offset=${field.kwargs.field_offset},
+                                                            description='''${field.kwargs.description}''',
+                                                            float_value=${field.kwargs.float_value},
+                                                            parts=[
+                                                                %for part in field.kwargs.parts:
+                                                                ${part.type}(${str(part.kwargs)}),
+                                                                %endfor
+                                                            ]),
+                                               %elif field.type == 'EnumMessageField':
+                                               ${field.type}(name='${field.name}',
+                                                             unpack_fmt='${field.kwargs.unpack_fmt}',
+                                                             description='''${field.kwargs.description}''',
+                                                             field_offset=${field.kwargs.field_offset},
+                                                             field_length=${field.kwargs.field_length},
+                                                             enum_values=[
+                                                                 %for enum_val in field.kwargs.enum_values:
+                                                                 ${enum_val.__dict__},
+                                                                 %endfor
+                                                             ]),
+                                               %elif field.type == 'SetMessageField':
+                                               ${field.type}(name='${field.name}',
+                                                             unpack_fmt='${field.kwargs.unpack_fmt}',
+                                                             description='''${field.kwargs.description}''',
+                                                             field_offset=${field.kwargs.field_offset},
+                                                             field_length=${field.kwargs.field_length},
+                                                             choices=[
+                                                                 %for choice_val in field.kwargs.choices:
+                                                                 ${choice_val.__dict__},
+                                                                 %endfor
+                                                             ]),
+                                               %else:
+                                               ${field.type}(${str(field.kwargs)}),
+                                               %endif
+                                               %endfor
+                                           ])
+        %endfor
+
+        self.iterators = [
+        %for group in message_def.iterators:
+            self.${group.name},
+        %endfor
+        ]
+        %else:
+        self.iterators = []
+        %endif
+</%def>
