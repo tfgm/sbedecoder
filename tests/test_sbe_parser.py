@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import nose
 import urllib
 import tempfile

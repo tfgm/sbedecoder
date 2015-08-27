@@ -133,13 +133,6 @@ class OrderBookBuilder(object):
         sequence_number = unpack_from("<i", mdp_packet, offset=0)[0]
         sending_time = unpack_from("<Q", mdp_packet, offset=4)[0]
 
-        if self.stream_sequence_number != -1 and self.stream_sequence_number + 1 != sequence_number:
-            # We have an invalid sequence number
-            self._invalidate_books()
-            self.stream_sequence_number = -1
-            self.sending_time = None
-            return
-
         self.stream_sequence_number = sequence_number
         self.sending_time = sending_time
 
@@ -190,9 +183,14 @@ class OrderBookConsolePrinter(object):
 
 
 def process_file(args, pcap_filename, security_id_filter=None):
-    # Read in the schema xml as a dictionary and construct the various schema objects
     mdp_schema = SBESchema()
-    mdp_schema.parse(args.schema)
+    # Read in the schema xml as a dictionary and construct the various schema objects
+    try:
+        from sbedecoder.generated import __messages__ as generated_messages
+        mdp_schema.load(generated_messages)
+    except:
+        mdp_schema.parse(args.schema)
+
     msg_factory = SBEMessageFactory(mdp_schema)
     mdp_parser = SBEParser(msg_factory)
     book_builder = OrderBookBuilder(mdp_parser, security_id_filter=security_id_filter)

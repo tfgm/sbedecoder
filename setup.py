@@ -12,5 +12,5 @@ setup(
     packages=['sbedecoder', ],
     scripts=['scripts/mdp_decoder.py'],
     long_description='see https://github.com/tfgm/sbedecoder/INSTALL.md',
-    install_requires=['dpkt', 'lxml', 'nose'],
+    install_requires=['dpkt', 'lxml', 'nose', 'mako', 'autopep8'],
 )

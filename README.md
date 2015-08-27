@@ -63,7 +63,7 @@ Example, output:
     ::::md_entry_px: 18746.0 ({'mantissa': 187460000000, 'exponent': -7}) md_entry_size: 6 security_id: 559884 rpt_seq: 2666381 number_of_orders: 1 md_price_level: 10 md_update_action: New (0) md_entry_type: Bid (0) 
 
 mdp_book_builder.py
---------------
+-------------------
 
 mdp_book_builder.py serves as an example of using the sbedecoder package to build limit orderbooks for a given contract.
 
@@ -72,7 +72,7 @@ For help with using mdp_book_builder.py:
     mdp_book_builder.py --help
 
 Performance
-----------
+-----------
 
 sbedecoder itself isn't optimized for performance however it can be adequate for simple backtesting scenarios amd 
 post trade analytics.  Due to the amount of printing done by mdp_decoder.py, it can be quite slow to parse large 
@@ -87,3 +87,35 @@ For improved performance (4 to 5x), sbedecoder will run under PyPy.  Assuming yo
     /opt/pypy/bin/pip install dpkt
     /opt/pypy/bin/pypy setup.py install
     
+Code Generation
+---------------
+
+A SBE class generator script is available to generate a python file that contains the class definitions that match those
+that are created dynamically via the SBESchema.parse method.
+
+For help with using sbe_class_generator.py:
+
+    sbe_class_generator.py --help
+
+An usage would be (from the generator directory):
+
+/sbe_class_generator.py --schema schema.xml --output generated.py --template ./sbe_message.tmpl
+
+This command will output a file called generated.py containing the class definitions that were dynamically created
+while parsing the 'schema.xml' file. The template file used to generated the classes is contained in sbe_message.tmpl.
+
+The generated.py file can simply be used for examining the class construction, or it can replace the contents of the
+generated.py file in the sbedecoder core project. By replacing the generated.py file in the sbedecoder package, a
+developer will get access to the class definitions in the IDE.
+
+In order to make use of the standard parser functionality using the generated code one should use the SBESchema.load
+method instead of the parse method.
+
+An example of how to do this is below and is contained in the mdp_book_builder.py script:
+
+    try:
+        from sbedecoder.generated import __messages__ as generated_messages
+        mdp_schema.load(generated_messages)
+    except:
+        mdp_schema.parse(args.schema)
+
