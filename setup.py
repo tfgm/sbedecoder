@@ -7,10 +7,10 @@ setup(
     author_email="github@tradeforecaster.com",
     description=("Simple Bianry Encoding (SBE) decoder (handles CME MDP3 messages)"),
     license="MIT",
-    keywords="sbe mdp3",
+    keywords="sbe mdp3 orderbook",
     url="https://github.com/tfgm/sbedecoder",
-    packages=['sbedecoder', ],
-    scripts=['scripts/mdp_decoder.py'],
+    packages=['sbedecoder', 'orderbook'],
+    scripts=['scripts/mdp_decoder.py', 'scripts/mdp_book_builder.py'],
     long_description='see https://github.com/tfgm/sbedecoder/INSTALL.md',
     install_requires=['dpkt', 'lxml', 'nose', 'mako', 'autopep8'],
 )
