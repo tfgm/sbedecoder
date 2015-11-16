@@ -40,6 +40,13 @@ Install
 
     python setup.py install
 
+**Note**: on Windows, we typically use the Anaconda python distribution.  Anaconda does not distribute 
+python's test code.  If you have issues with dpkt (ImportError: No module named test), you can either 
+install the latest dpkt from source (https://github.com/kbandla/dpkt) or just comment out the 
+import (from test import pystone) in ..\\Anaconda\\lib\\site-packages\\dpkt\\decorators.py.  
+Newer versions of dpkt no longer have this dependency.
+
+
 mdp_decoder.py
 --------------
 

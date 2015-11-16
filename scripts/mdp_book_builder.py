@@ -39,7 +39,7 @@ def process_file(args, pcap_filename, security_id_filter=None):
     console_printer = ConsolePrinter()
     book_builder.orderbook_handler = console_printer
 
-    with gzip.open(pcap_filename) if pcap_filename.endswith('.gz') else open(pcap_filename) as pcap:
+    with gzip.open(pcap_filename, 'rb') if pcap_filename.endswith('.gz') else open(pcap_filename, 'rb') as pcap:
         pcap_reader = dpkt.pcap.Reader(pcap)
         packet_number = 0
         for ts, packet in pcap_reader:
