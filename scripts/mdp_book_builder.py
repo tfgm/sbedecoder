@@ -12,7 +12,7 @@ import dpkt
 
 from orderbook import SecDef
 from orderbook import PacketProcessor
-from orderbook import OrderBookConsolePrinter
+from orderbook import ConsolePrinter
 
 from sbedecoder import SBESchema
 from sbedecoder import SBEMessageFactory
@@ -36,7 +36,7 @@ def process_file(args, pcap_filename, security_id_filter=None):
 
     book_builder = PacketProcessor(mdp_parser, secdef, security_id_filter=security_id_filter)
 
-    console_printer = OrderBookConsolePrinter()
+    console_printer = ConsolePrinter()
     book_builder.orderbook_handler = console_printer
 
     with gzip.open(pcap_filename) if pcap_filename.endswith('.gz') else open(pcap_filename) as pcap:

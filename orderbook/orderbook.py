@@ -18,6 +18,9 @@ class OrderBook(object):
         self.received_time = None
         self.stream_sequence = -1
         self.instrument_sequence = -1
+        self.last_price = None
+        self.last_size = None
+        self.last_aggressor_side = None
         self.bids = []
         self.offers = []
         for i in range(0, self.levels):
@@ -93,7 +96,20 @@ class OrderBook(object):
         elif md_update_action == 'Delete':
             self.delete(level, md_entry_type)
 
-        return True
+        # return True if the update was relevant (occurred within the display_levels)
+        return True if level <= self.display_levels else False
+
+    def handle_trade(self, sending_time, received_time, stream_sequence, instrument_sequence,
+            price, size, aggressor_side):
+
+        if self.have_seen_sequence(instrument_sequence):
+            return False
+
+        self._update_book_keeping(sending_time,  received_time, stream_sequence, instrument_sequence)
+
+        self.last_price = price
+        self.last_size = size
+        self.last_aggressor_side = aggressor_side
 
     def __str__(self):
         delta = None
@@ -107,13 +123,18 @@ class OrderBook(object):
             bid_string = '({:>6}) {:>6} - {:>12}'.format(entry.num_orders, entry.size, entry.price)
             entry = self.offers[i]
             offer_string = '{:<12} - {:<6} ({:<6}) '.format(entry.price, entry.size, entry.num_orders)
-            result += "{}|{}\n".format(bid_string, offer_string)
+            result += '{}|{}\n'.format(bid_string, offer_string)
         return result
 
 
-class OrderBookConsolePrinter(object):
+class ConsolePrinter(object):
     def on_orderbook(self, orderbook):
-        print str(orderbook)
+        print(str(orderbook))
+    def on_trade(self, orderbook):
+        print('{} ({}) SSN:{} ISN:{} Sent:{} Received:{} Trade - {} @ {} ({})\n'.format(
+            orderbook.description, orderbook.security_id, orderbook.stream_sequence, orderbook.instrument_sequence,
+            orderbook.sending_time, orderbook.received_time, orderbook.last_size, orderbook.last_price,
+            orderbook.last_aggressor_side))
 
 
 

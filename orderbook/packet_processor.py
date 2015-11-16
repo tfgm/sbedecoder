@@ -21,6 +21,9 @@ class PacketProcessor(object):
             # already have seen this packet
             return
 
+        if self.stream_sequence_number + 1 <> sequence_number:
+            print('warning: stream sequence gap from {} to {}'.format(self.stream_sequence_number, sequence_number))
+
         sending_time = unpack_from('<Q', mdp_packet, offset=4)[0]
 
         self.stream_sequence_number = sequence_number
@@ -32,10 +35,51 @@ class PacketProcessor(object):
     def handle_message(self, stream_sequence_number, sending_time, received_time, mdp_message):
         # We only care about the incremental refresh book packets at this point
         if mdp_message.template_id.value == 32:
-            self.handle_incremental(stream_sequence_number, sending_time, received_time, mdp_message)
+            self.handle_incremental_refresh_book(stream_sequence_number, sending_time, received_time, mdp_message)
+        elif mdp_message.template_id.value == 42:
+            self.handle_incremental_refresh_trade_summary(stream_sequence_number, sending_time, received_time, mdp_message)
 
-    def handle_incremental(self, stream_sequence_number, sending_time, received_time, incremental_message):
-        updated_books = []
+    def handle_incremental_refresh_book(self, stream_sequence_number, sending_time, received_time, incremental_message):
+        updated_books = set()  # Note: we batch all the updates from a single packet into one update
+        for md_entry in incremental_message.no_md_entries:
+
+            security_id = md_entry.security_id.value
+            if self.security_id_filter and security_id not in self.security_id_filter:
+                continue
+
+            if security_id not in self.base_orderbooks:
+                security_info = self.secdef.lookup_security_id(security_id)
+                if security_info:
+                    symbol, depth = security_info
+                    ob = OrderBook(security_id, depth, symbol)
+                    self.base_orderbooks[security_id] = ob
+                else:
+                    # Can't properly handle an orderbook without knowing the depth
+                    self.base_orderbooks[security_id] = None
+
+            orderbook = self.base_orderbooks[security_id]
+            if not orderbook:
+                return
+
+            md_entry_price = md_entry.md_entry_px.value
+            md_entry_size = md_entry.md_entry_size.value
+            rpt_sequence = md_entry.rpt_seq.value
+            number_of_orders = md_entry.number_of_orders.value
+            md_price_level = md_entry.md_price_level.value
+            md_update_action = md_entry.md_update_action.value
+            md_entry_type = md_entry.md_entry_type.value
+
+            visible_updated = orderbook.handle_update(sending_time, received_time, stream_sequence_number, rpt_sequence,
+                md_price_level, md_entry_type, md_update_action, md_entry_price, md_entry_size, number_of_orders)
+
+            if visible_updated:
+                updated_books.add(orderbook)
+
+        if self.orderbook_handler and getattr(self.orderbook_handler, 'on_orderbook'):
+            for orderbook in updated_books:
+                self.orderbook_handler.on_orderbook(orderbook)
+
+    def handle_incremental_refresh_trade_summary(self, stream_sequence_number, sending_time, received_time, incremental_message):
         for md_entry in incremental_message.no_md_entries:
 
             security_id = md_entry.security_id.value
@@ -58,17 +102,11 @@ class PacketProcessor(object):
             md_entry_price = md_entry.md_entry_px.value
             md_entry_size = md_entry.md_entry_size.value
             rpt_sequence = md_entry.rpt_seq.value
+            aggressor_side = md_entry.aggressor_side.value
             number_of_orders = md_entry.number_of_orders.value
-            md_price_level = md_entry.md_price_level.value
-            md_update_action = md_entry.md_update_action.value
-            md_entry_type = md_entry.md_entry_type.value
 
-            updated = orderbook.handle_update(sending_time, received_time, stream_sequence_number, rpt_sequence,
-                md_price_level, md_entry_type, md_update_action, md_entry_price, md_entry_size, number_of_orders)
+            orderbook.handle_trade(sending_time, received_time, stream_sequence_number, rpt_sequence,
+                md_entry_price, md_entry_size, aggressor_side)
 
-            if updated and orderbook not in updated_books:
-                updated_books.append(orderbook)
-
-        if self.orderbook_handler and getattr(self.orderbook_handler, 'on_orderbook'):
-            for orderbook in updated_books:
-                self.orderbook_handler.on_orderbook(orderbook)
+            if self.orderbook_handler and getattr(self.orderbook_handler, 'on_trade'):
+                self.orderbook_handler.on_trade(orderbook)
