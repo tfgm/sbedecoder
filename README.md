@@ -25,7 +25,7 @@ and then creating an instance of SBEParser() using the SBEMessageFactory():
 Messages are parsed from any structure that looks like a buffer containing the raw binary 
 data (buffer, str, bytearay, etc): 
 
-    for message in mdp_parser.parse(data, offset=offset):
+    for message in message_parser.parse(data, offset=offset):
         process(message)
 
 A parsed message is represented as an instance of
