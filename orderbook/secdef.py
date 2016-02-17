@@ -7,7 +7,8 @@ class SecDef(object):
         self.info = {}
 
     def load(self, secdef_filename):
-        tag_regexp = re.compile('(?:^|\x01)(48|55|264)=(.*?)(?=\x01)')
+        tag_regexp = re.compile('(?:^|\x01)(48|55)=(.*?)(?=\x01)')
+        depth_regexp = re.compile('1022=GBX\x01264=(\d+)')
         with gzip.open(secdef_filename, 'rb') as f:
             for line in f:
                 matches = tag_regexp.findall(line)
@@ -15,7 +16,9 @@ class SecDef(object):
                     tag = dict(matches)
                     security_id = int(tag['48'])
                     symbol = tag['55']
-                    depth = int(tag['264'])
+                    # now we need the depth
+                    m = depth_regexp.search(line)
+                    depth = int(m.group(1))
                     self.info[security_id] = (symbol, depth)
 
     def lookup_security_id(self, security_id):
