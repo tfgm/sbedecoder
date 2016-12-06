@@ -58,8 +58,8 @@ def process_file(args, pcap_filename):
                     udp = ip.data
                     try:
                         parse_mdp3_packet(mdp_parser, ts, udp.data, skip_fields)
-                    except Exception:
-                        print('could not parse packet number {}'.format(packet_number))
+                    except Exception as e:
+                        print('Error parsing packet #{} - {}'.format(packet_number, e))
 
 
 def process_command_line():
