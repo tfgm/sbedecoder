@@ -9,6 +9,7 @@ import os.path
 import gzip
 
 import dpkt
+import binascii
 
 from orderbook import SecDef
 from orderbook import PacketProcessor
@@ -19,7 +20,7 @@ from sbedecoder import SBEMessageFactory
 from sbedecoder import SBEParser
 
 
-def process_file(args, pcap_filename, security_id_filter=None):
+def process_file(args, pcap_filename, security_id_filter=None, print_data=False):
     mdp_schema = SBESchema()
     # Read in the schema xml as a dictionary and construct the various schema objects
     try:
@@ -51,9 +52,11 @@ def process_file(args, pcap_filename, security_id_filter=None):
                     udp = ip.data
                     data = udp.data
                     try:
+                        if print_data:
+                            print('data: {}'.format(binascii.b2a_hex(data)))
                         book_builder.handle_packet(long(ts*1000000), data)
-                    except Exception:
-                        continue
+                    except Exception as e:
+                        print('Error decoding e:{} message:{}'.format(e, binascii.b2a_hex(data)))
 
 
 def process_command_line():
@@ -75,6 +78,9 @@ def process_command_line():
     parser.add_argument('-i', '--ids', default='',
         help='Comma separated list of security ids to display books for')
 
+    parser.add_argument("--print-data", action='store_true',
+        help="Print the data as an ascii hex string (default: %(default)s)")
+
     args = parser.parse_args()
 
     # check number of arguments, verify values, etc.:
@@ -93,7 +99,7 @@ def main(argv=None):
     security_id_filter = None
     if args.ids:
         security_id_filter = [int(x.strip().lstrip()) for x in args.ids.split(',')]
-    process_file(args, args.pcapfile, security_id_filter)
+    process_file(args, args.pcapfile, security_id_filter, args.print_data)
     return 0  # success
 
 
