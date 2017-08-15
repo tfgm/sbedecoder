@@ -4,6 +4,7 @@ import nose
 import urllib
 import tempfile
 import os
+import binascii
 from sbedecoder import SBESchema
 from sbedecoder import SBEMessageFactory
 from sbedecoder import SBEParser
@@ -36,7 +37,8 @@ class TestSBEParserLibrary:
         msg_factory = SBEMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
-        msg_buffer = 'M\x7f\xcc\x04<}\x94\x89\x02\x89\xf5\x13(\x00\x1e\x00\x1e\x00\x01\x00\x05\x00\x9a\x94x\x89\x02\x89\xf5\x1309\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\x7f\x06A\x00\x02\x00\x04'
+        msg_buffer = binascii.a2b_hex('5603a9009c16d545349ad91428001e001e000100080003259845349ad914455300000000000000000000ffffff7fed4380150004')
+
         offset = 12
 
         for message in parser.parse(msg_buffer, offset):
@@ -47,11 +49,11 @@ class TestSBEParserLibrary:
         recorded_message = self.recorded_messages[0]
         assert_equals(30, recorded_message.template_id.value)
         assert_equals('SecurityStatus', recorded_message.name)
-        assert_equals(16646, recorded_message.trade_date.value)
-        assert_equals(1438206300004062362, recorded_message.transact_time.value)
+        assert_equals(17389, recorded_message.trade_date.value)
+        assert_equals(1502401500001346819, recorded_message.transact_time.value)
         assert_equals('Reset Statistics', recorded_message.security_trading_event.value)
-        assert_equals('Trading Halt', recorded_message.security_trading_status.value)
-        assert_equals('09', recorded_message.security_group.value)
+        assert_equals('Pre Open', recorded_message.security_trading_status.value)
+        assert_equals('ES', recorded_message.security_group.value)
         assert_equals('', recorded_message.asset.value)
         assert_equals('Group Schedule', recorded_message.halt_reason.value)
         assert_equals(None, recorded_message.security_id.value)
@@ -62,7 +64,7 @@ class TestSBEParserLibrary:
         msg_factory = SBEMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
-        msg_buffer = 'N\x7f\xcc\x04F\x9a\x95\x89\x02\x89\xf5\x13(\x00\x1e\x00\x1e\x00\x01\x00\x05\x00\x9a\x94x\x89\x02\x89\xf5\x13CT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\x7f\x06A\x00\x02\x00\x04'
+        msg_buffer = binascii.a2b_hex('1409a900bbe7b5d5fe9ad91428001e001e000100080019989cd5fe9ad914455300000000000000000000ffffff7fed4380150001')
         offset = 12
 
         for message in parser.parse(msg_buffer, offset):
@@ -73,23 +75,25 @@ class TestSBEParserLibrary:
         recorded_message = self.recorded_messages[0]
         assert_equals(30, recorded_message.template_id.value)
         assert_equals('SecurityStatus', recorded_message.name)
-        assert_equals(16646, recorded_message.trade_date.value)
-        assert_equals(1438206300004062362, recorded_message.transact_time.value)
-        assert_equals('Reset Statistics', recorded_message.security_trading_event.value)
-        assert_equals('Trading Halt', recorded_message.security_trading_status.value)
-        assert_equals('CT', recorded_message.security_group.value)
+        assert_equals(17389, recorded_message.trade_date.value)
+        assert_equals(1502402370000951321, recorded_message.transact_time.value)
+        assert_equals('EndOfEvent', recorded_message.match_event_indicator.value)
+        assert_equals('Pre Open', recorded_message.security_trading_status.value)
+        assert_equals('ES', recorded_message.security_group.value)
         assert_equals('', recorded_message.asset.value)
         assert_equals('Group Schedule', recorded_message.halt_reason.value)
         assert_equals(None, recorded_message.security_id.value)
+        assert_equals('No Cancel', recorded_message.security_trading_event.value)
 
-    def test_incremental_refresh_multiple_messages(self):
+    def test_incremental_refresh_verify_groups(self):
 
         schema = SBESchema()
         schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
         msg_factory = SBEMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
-        msg_buffer = 'U[\xe0\x02\xd6\t\xc64Z%\xe6\x138\x00\x0b\x00 \x00\x01\x00\x05\x00yR\xc44Z%\xe6\x13\x04\x00\x00 \x00\x01\x80\x97\x1d\x94\xff\xff\xff\xff\r\x00\x00\x00\xcb\xb5\x00\x00\x1f%\x0e\x00\x07\x00\x00\x00\n\x011\x00\x00\x00\x00\x00\x18\x00\x0b\x00 \x00\x01\x00\x05\x00yR\xc44Z%\xe6\x13\x80\x00\x00 \x00\x00'
+        msg_buffer = binascii.a2b_hex(
+            'c30fa90082dd3f8b069bd91478000b0020000100080095ab3d8b069bd914840000200002009bb1203602000002000000805d00003e2d140001000000010030000000000080e8ca113602000002000000805d00003f2d140001000000020130000000000018000000000000019c53980a9600000024131444010000000200000001010000')
         offset = 12
 
         msg_count = 0
@@ -98,33 +102,148 @@ class TestSBEParserLibrary:
 
             if msg_count == 1:
                 assert_equals(32, message.template_id.value)
-                assert_equals(1433874600726647417, message.transact_time.value)
-                assert_equals(4, message.match_event_indicator.raw_value)
-                assert_equals('LastQuoteMsg', message.match_event_indicator.value)
+                assert_equals(1502402403112954773, message.transact_time.value)
+                assert_equals(132, message.match_event_indicator.raw_value)
+                assert_equals('LastQuoteMsg, EndOfEvent', message.match_event_indicator.value)
 
-                repeating_groups = [x for x in message.no_md_entries]
-                assert_equals(1, len(repeating_groups))
-                repeating_group = repeating_groups[0]
-                assert_equals(-181.0, repeating_group.md_entry_px.value)
-                assert_equals(13, repeating_group.md_entry_size.value)
-                assert_equals(46539, repeating_group.security_id.value)
-                assert_equals(927007, repeating_group.rpt_seq.value)
-                assert_equals(7, repeating_group.number_of_orders.value)
-                assert_equals(10, repeating_group.md_price_level.value)
-                assert_equals(1, repeating_group.md_update_action.raw_value)
-                assert_equals('Change', repeating_group.md_update_action.value)
-                assert_equals('1', repeating_group.md_entry_type.raw_value)
-                assert_equals('Offer', repeating_group.md_entry_type.value)
-            elif msg_count == 2:
+                groups = [x for x in message.groups]
+                assert_equals(2, len(groups))
+
+                repeating_groups = groups[0].repeating_groups  # no_md_entries
+
+                n = 0
+                for repeating_group in repeating_groups:
+                    if n == 0:
+                        assert_equals(243150.0, repeating_group.md_entry_px.value)
+                        assert_equals(2, repeating_group.md_entry_size.value)
+                        assert_equals(23936, repeating_group.security_id.value)
+                        assert_equals(1322302, repeating_group.rpt_seq.value)
+                        assert_equals(1, repeating_group.number_of_orders.value)
+                        assert_equals(1, repeating_group.md_price_level.value)
+                        assert_equals(0, repeating_group.md_update_action.raw_value)
+                        assert_equals('New', repeating_group.md_update_action.value)
+                        assert_equals('0', repeating_group.md_entry_type.raw_value)
+                        assert_equals('Bid', repeating_group.md_entry_type.value)
+                    elif n == 1:
+                        assert_equals(243125.0, repeating_group.md_entry_px.value)
+                        assert_equals(2, repeating_group.md_entry_size.value)
+                        assert_equals(23936, repeating_group.security_id.value)
+                        assert_equals(1322303, repeating_group.rpt_seq.value)
+                        assert_equals(1, repeating_group.number_of_orders.value)
+                        assert_equals(2, repeating_group.md_price_level.value)
+                        assert_equals(1, repeating_group.md_update_action.raw_value)
+                        assert_equals('Change', repeating_group.md_update_action.value)
+                        assert_equals('0', repeating_group.md_entry_type.raw_value)
+                        assert_equals('Bid', repeating_group.md_entry_type.value)
+                    n += 1
+                assert_equals(2, n)
+
+                repeating_groups = groups[1].repeating_groups  # no_order_id_entries
+
+                n = 0
+                for repeating_group in repeating_groups:
+                    if n == 0:
+                        assert_equals(644422849436, repeating_group.order_id.value)
+                        assert_equals(5437133604, repeating_group.md_order_priority.value)
+                        assert_equals(2, repeating_group.md_display_qty.value)
+                        assert_equals(1, repeating_group.reference_id.value)
+                        assert_equals('Update', repeating_group.order_update_action.value)
+                        assert_equals(1, repeating_group.order_update_action.raw_value)
+                    n += 1
+                assert_equals(1, n)
+
+
+    def test_incremental_refresh_verify_group_attributes(self):
+        schema = SBESchema()
+        schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
+        msg_factory = SBEMessageFactory(schema)
+        parser = SBEParser(msg_factory)
+
+        msg_buffer = binascii.a2b_hex(
+            'c30fa90082dd3f8b069bd91478000b0020000100080095ab3d8b069bd914840000200002009bb1203602000002000000805d00003e2d140001000000010030000000000080e8ca113602000002000000805d00003f2d140001000000020130000000000018000000000000019c53980a9600000024131444010000000200000001010000')
+        offset = 12
+
+        msg_count = 0
+        for message in parser.parse(msg_buffer, offset):
+            msg_count += 1
+
+            if msg_count == 1:
                 assert_equals(32, message.template_id.value)
-                assert_equals(1433874600726647417, message.transact_time.value)
-                assert_equals(128, message.match_event_indicator.raw_value)
-                assert_equals('EndOfEvent', message.match_event_indicator.value)
+                assert_equals(1502402403112954773, message.transact_time.value)
+                assert_equals(132, message.match_event_indicator.raw_value)
+                assert_equals('LastQuoteMsg, EndOfEvent', message.match_event_indicator.value)
 
-                # No repeating groups in this message
-                repeating_groups = [x for x in message.no_md_entries]
-                assert_equals(0, len(repeating_groups))
+                n = 0
+                for repeating_group in message.no_md_entries:
+                    if n == 0:
+                        assert_equals(243150.0, repeating_group.md_entry_px.value)
+                        assert_equals(2, repeating_group.md_entry_size.value)
+                        assert_equals(23936, repeating_group.security_id.value)
+                        assert_equals(1322302, repeating_group.rpt_seq.value)
+                        assert_equals(1, repeating_group.number_of_orders.value)
+                        assert_equals(1, repeating_group.md_price_level.value)
+                        assert_equals(0, repeating_group.md_update_action.raw_value)
+                        assert_equals('New', repeating_group.md_update_action.value)
+                        assert_equals('0', repeating_group.md_entry_type.raw_value)
+                        assert_equals('Bid', repeating_group.md_entry_type.value)
+                    elif n == 1:
+                        assert_equals(243125.0, repeating_group.md_entry_px.value)
+                        assert_equals(2, repeating_group.md_entry_size.value)
+                        assert_equals(23936, repeating_group.security_id.value)
+                        assert_equals(1322303, repeating_group.rpt_seq.value)
+                        assert_equals(1, repeating_group.number_of_orders.value)
+                        assert_equals(2, repeating_group.md_price_level.value)
+                        assert_equals(1, repeating_group.md_update_action.raw_value)
+                        assert_equals('Change', repeating_group.md_update_action.value)
+                        assert_equals('0', repeating_group.md_entry_type.raw_value)
+                        assert_equals('Bid', repeating_group.md_entry_type.value)
+                    n += 1
+                assert_equals(2, n)
 
+                n = 0
+                for repeating_group in message.no_order_id_entries:
+                    if n == 0:
+                        assert_equals(644422849436, repeating_group.order_id.value)
+                        assert_equals(5437133604, repeating_group.md_order_priority.value)
+                        assert_equals(2, repeating_group.md_display_qty.value)
+                        assert_equals(1, repeating_group.reference_id.value)
+                        assert_equals('Update', repeating_group.order_update_action.value)
+                        assert_equals(1, repeating_group.order_update_action.raw_value)
+                    n += 1
+                assert_equals(1, n)
+
+
+    def test_incremental_refresh_multiple_messages(self):
+
+        schema = SBESchema()
+        schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
+        msg_factory = SBEMessageFactory(schema)
+        parser = SBEParser(msg_factory)
+
+        msg_buffer = binascii.a2b_hex('c90fa9008a15428b069bd91458000b00200001000800e7c43d8b069bd91484000020000180b2654d360200008e0000000a610000f62fac003000000007013000000000001800000000000001e44c980a960000002b13144401000000010000000101000058000b002000010008006f203f8b069bd9148400002000018017336b3602000004000000805d0000402d140002000000020131000000000018000000000000016153980a960000002c131444010000000200000001010000')
+        offset = 12
+
+        msg_count = 0
+        for message in parser.parse(msg_buffer, offset):
+            if msg_count == 0:
+                assert_equals('MDIncrementalRefreshBook', message.name)
+                n = 0
+                for entry in message.no_md_entries:
+                    if n == 0:
+                        assert_equals(243225.0, entry.md_entry_px.value)
+                        assert_equals(142, entry.md_entry_size.value)
+                    n += 1
+                assert_equals(1, n)
+            elif msg_count == 1:
+                assert_equals('MDIncrementalRefreshBook', message.name)
+                n = 0
+                for entry in message.no_md_entries:
+                    if n == 0:
+                        assert_equals(243275.0, entry.md_entry_px.value)
+                    assert_equals(4, entry.md_entry_size.value)
+                    n += 1
+                assert_equals(1, n)
+            msg_count += 1
         assert_equals(2, msg_count)
 
     def test_incremental_refresh_trade_summary(self):
@@ -134,29 +253,29 @@ class TestSBEParserLibrary:
         msg_factory = SBEMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
-        msg_buffer = 'rWa\x00\xdc"\xda6Z%\xe6\x13`\x00\x0b\x00*\x00\x01\x00\x05\x00\x05\xd0\xd46Z%\xe6\x13\x01\x00\x00 \x00\x01\x80_\x8f\x9e\x06\x00\x00\x00\x01\x00\x00\x00.\xee\x01\x00\xee\xe4\x1b\x00\x02\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00\x02\xca\x89>\x0e\xb6\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+        msg_buffer = binascii.a2b_hex('2f0aa9007decc6d2059bd91460000b002a000100080085b89fd2059bd91401000020000100f981d336020000020000000a610000fe2aac00020000000100ffffffff000010000000000000023051980a960000000200000000000000ad50980a960000000200000000000000')
         offset = 12
 
         msg_count = 0
         for message in parser.parse(msg_buffer, offset):
             msg_count += 1
             assert_equals(42, message.template_id.value)
-            assert_equals(1433874600761282565, message.transact_time.value)
+            assert_equals(1502402400015595653, message.transact_time.value)
             assert_equals(1, message.match_event_indicator.raw_value)
             assert_equals('LastTradeMsg', message.match_event_indicator.value)
 
             # This message has two repeating groups
-            assert_equals(2, len(message.iterators))
+            assert_equals(2, len(message.groups))
 
             # We expect only 1 md entry
             for md_entry in message.no_md_entries:
-                assert_equals(2843.0, md_entry.md_entry_px.value)
-                assert_equals(1, md_entry.md_entry_size.value)
-                assert_equals(126510, md_entry.security_id.value)
-                assert_equals(1828078, md_entry.rpt_seq.value)
+                assert_equals(243450.0, md_entry.md_entry_px.value)
+                assert_equals(2, md_entry.md_entry_size.value)
+                assert_equals(24842, md_entry.security_id.value)
+                assert_equals(11283198, md_entry.rpt_seq.value)
                 assert_equals(2, md_entry.number_of_orders.value)
-                assert_equals(2, md_entry.aggressor_side.raw_value)
-                assert_equals('Sell', md_entry.aggressor_side.value)
+                assert_equals(1, md_entry.aggressor_side.raw_value)
+                assert_equals('Buy', md_entry.aggressor_side.value)
                 assert_equals(0, md_entry.md_update_action.raw_value)
                 assert_equals('New', md_entry.md_update_action.value)
                 assert_equals('2', md_entry.md_entry_type.value)
@@ -166,11 +285,11 @@ class TestSBEParserLibrary:
             for order_id_entry in message.no_order_id_entries:
                 num_order_id_entries += 1
                 if num_order_id_entries == 1:
-                    assert_equals(781923027402, order_id_entry.order_id.value)
-                    assert_equals(1, order_id_entry.last_qty.value)
+                    assert_equals(644422848816, order_id_entry.order_id.value)
+                    assert_equals(2, order_id_entry.last_qty.value)
                 else:
-                    assert_equals(0, order_id_entry.order_id.value)
-                    assert_equals(1, order_id_entry.last_qty.value)
+                    assert_equals(644422848685, order_id_entry.order_id.value)
+                    assert_equals(2, order_id_entry.last_qty.value)
 
         assert_equals(1, msg_count)
 

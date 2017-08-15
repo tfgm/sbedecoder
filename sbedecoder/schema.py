@@ -1,7 +1,7 @@
 import re
 from lxml import etree
 from sbedecoder.message import SBEMessage, TypeMessageField, EnumMessageField, SetMessageField, CompositeMessageField, \
-    SBERepeatingGroupIterator
+    SBERepeatingGroupContainer
 
 
 def convert_to_underscore(name):
@@ -66,26 +66,26 @@ class SBESchema(object):
                 local_name = etree.QName(elem.tag).localname
                 if local_name == message_tag:
                     message_definition = dict((convert_to_underscore(x[0]), x[1]) for x in elem.items())
-                    message_fields = []
-                    message_groups = []
-                    for child in elem.getchildren():
-                        if child.tag == 'field':
-                            message_field = dict((convert_to_underscore(x[0]), x[1]) for x in child.items())
-                            message_field['converted_name'] = convert_to_underscore(message_field['name'])
-                            message_fields.append(message_field)
-                        elif child.tag == 'group':
-                            message_group = dict((convert_to_underscore(x[0]), x[1]) for x in child.items())
-                            group_fields = []
-                            for group_child in child.getchildren():
-                                group_field = dict((convert_to_underscore(x[0]), x[1]) for x in group_child.items())
-                                group_fields.append(group_field)
-                            message_group['fields'] = group_fields
-                            message_group['converted_name'] = convert_to_underscore(message_group['name'])
-                            message_groups.append(message_group)
-                    message_definition['fields'] = message_fields
-                    message_definition['groups'] = message_groups
+                    SBESchema._parse_message_elements(elem, message_definition)
                     messages.append(message_definition)
         return messages
+
+    @staticmethod
+    def _parse_message_elements(elements, definition):
+        fields = []
+        groups = []
+        for child in elements.getchildren():
+            if child.tag == 'field':
+                field = dict((convert_to_underscore(x[0]), x[1]) for x in child.items())
+                field['converted_name'] = convert_to_underscore(field['name'])
+                fields.append(field)
+            elif child.tag == 'group':
+                group = dict((convert_to_underscore(x[0]), x[1]) for x in child.items())
+                SBESchema._parse_message_elements(child, group)
+                group['converted_name'] = convert_to_underscore(group['name'])
+                groups.append(group)
+        definition['fields'] = fields
+        definition['groups'] = groups
 
     def _build_message_field(self, field_definition, offset, header_size=10, endian='<', add_header_size=True):
         field_name = convert_to_underscore(field_definition['name'])
@@ -245,104 +245,109 @@ class SBESchema(object):
     def get_message_type(self, template_id):
         return self.message_map.get(template_id, None)
 
+    def _construct_header(self, message):
+        field_offset = 0
+        # All messages start with a message size field
+        message_id = int(message['id'])
+        schema_block_length = int(message['block_length'])
+        message_type = type(message['description'], (SBEMessage,), {'message_id': message_id,
+                                                                    'schema_block_length': schema_block_length})
+        self.message_map[message_id] = message_type
+        setattr(message_type, 'fields', [])
+
+        # All messages start with a message size field
+        message_size_field = TypeMessageField(name='message_size',
+                                              description="Header Message Size",
+                                              unpack_fmt='<H', field_offset=field_offset, field_length=2)
+        field_offset += message_size_field.field_length
+        message_type.fields.append(message_size_field)
+        setattr(message_type, 'message_size', message_size_field)
+
+        # Now grab the messageHeader type, it has to exist and populate the remaining header fields
+        message_header_type = self.type_map['messageHeader']
+        for header_field_type in message_header_type.get('children', []):
+            primitive_type_fmt, primitive_type_size = self.primitive_type_map[header_field_type['primitive_type']]
+            message_header_field = TypeMessageField(name=convert_to_underscore(header_field_type['name']),
+                                                    description='Header ' + header_field_type['name'],
+                                                    unpack_fmt=primitive_type_fmt,
+                                                    field_offset=field_offset,
+                                                    field_length=primitive_type_size)
+            field_offset += message_header_field.field_length
+            message_type.fields.append(message_header_field)
+            setattr(message_type, message_header_field.name, message_header_field)
+        setattr(message_type, 'header_size', field_offset)
+        return field_offset
+
+    def _add_fields(self, field_offset, entity, entity_type, endian, add_header_size=True):
+        # Now run through the remaining types and update the fields
+        for field_type in entity.get('fields', []):
+            field = self._build_message_field(field_type, field_offset, endian=endian, add_header_size=add_header_size)
+            field_offset += field.field_length
+            entity_type.fields.append(field)
+            # make it an attribute too
+            setattr(entity_type, field.name, field)
+
+    def _add_groups(self, entity, entity_type, endian):
+        # Now figure out the message groups
+        repeating_groups = []
+        for group_type in entity.get('groups', []):
+            group_name = convert_to_underscore(group_type['name'])
+            dimension_type = self.type_map[group_type['dimension_type']]
+            # There are two fields we care about, block_length and num_in_group
+            block_length_field = None
+            num_in_group_field = None
+            block_field_offset = 0
+            for child in dimension_type['children']:
+                if child['name'] == 'blockLength':
+                    primitive_type = child['primitive_type']
+                    primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
+                    block_length_field = TypeMessageField(name=convert_to_underscore(child['name']),
+                                                          description=child['name'],
+                                                          unpack_fmt=endian + primitive_type_fmt,
+                                                          field_offset=block_field_offset,
+                                                          field_length=primitive_type_size)
+                    block_field_offset += primitive_type_size
+                elif child['name'] == 'numInGroup':
+                    primitive_type = child['primitive_type']
+                    if 'offset' in child:
+                        block_field_offset = int(child['offset'])
+                    primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
+                    num_in_group_field = TypeMessageField(name=convert_to_underscore(child['name']),
+                                                          description=child['name'],
+                                                          unpack_fmt=endian + primitive_type_fmt,
+                                                          field_offset=block_field_offset,
+                                                          field_length=primitive_type_size)
+                    block_field_offset += primitive_type_size
+
+            group_field_offset = 0
+            repeating_group = SBERepeatingGroupContainer(name=group_name, block_length_field=block_length_field,
+                                                         num_in_group_field=num_in_group_field,
+                                                         dimension_size=block_field_offset)
+
+            self._add_fields(group_field_offset, group_type, repeating_group, endian, add_header_size=False)
+
+            repeating_groups.append(repeating_group)
+            setattr(entity_type, repeating_group.name, repeating_group)
+
+            # handle nested groups
+            self._add_groups(group_type, repeating_group, endian)
+
+        setattr(entity_type, 'groups', repeating_groups)
+
+    def _construct_body(self, message, field_offset, endian):
+        message_id = int(message['id'])
+        message_type = self.get_message_type(message_id)
+        self._add_fields(field_offset, message, message_type, endian, add_header_size=True)
+        self._add_groups(message, message_type, endian)
+
     def parse(self, xml_file, message_tag="message", types_tag="types", endian='<'):
         self.type_map = self._parse_types(xml_file, types_tag=types_tag)
         self.messages = self._parse_messages(xml_file, message_tag=message_tag)
 
         # Now construct each message with its expected field types
         for message in self.messages:
-            field_offset = 0
-        
-            # All messages start with a message size field
-            message_id = int(message['id'])
-            schema_block_length = int(message['block_length'])
-            message_type = type(message['description'], (SBEMessage,), {'message_id': message_id,
-                                                                        'schema_block_length': schema_block_length})
-
-            message_fields = []
-            # All messages start with a message size field
-            message_size_field = TypeMessageField(name='message_size',
-                                                  description="Header Message Size",
-                                                  unpack_fmt='<H', field_offset=field_offset, field_length=2)
-            field_offset += message_size_field.field_length
-            message_fields.append(message_size_field)
-
-            # Now grab the messageHeader type, it has to exist and populate the remaining header fields
-            message_header_type = self.type_map['messageHeader']
-            for header_field_type in message_header_type.get('children', []):
-                primitive_type_fmt, primitive_type_size = self.primitive_type_map[header_field_type['primitive_type']]
-                message_header_field = TypeMessageField(name=convert_to_underscore(header_field_type['name']),
-                                                        description='Header ' + header_field_type['name'],
-                                                        unpack_fmt=primitive_type_fmt,
-                                                        field_offset=field_offset,
-                                                        field_length=primitive_type_size)
-                field_offset += message_header_field.field_length
-                message_fields.append(message_header_field)
-
-            setattr(message_type, 'header_size', field_offset)
-
-            # Now run through the remaining types and update the fields
-            for message_field_type in message.get('fields', []):
-                message_field = self._build_message_field(message_field_type, field_offset)
-                field_offset += message_field.field_length
-                message_fields.append(message_field)
-
-            # Assign all the fields to class type
-            for message_field in message_fields:
-                setattr(message_type, message_field.name, message_field)
-
-            # Assign the fields array to keep around
-            setattr(message_type, 'fields', message_fields)
-
-            # Now figure out the message groups
-            repeating_groups = []
-            for group in message.get('groups', []):
-                group_name = convert_to_underscore(group['name'])
-                dimension_type = self.type_map[group['dimension_type']]
-                # There are two fields we care about, block_length and num_in_group
-                block_length_field = None
-                num_in_group_field = None
-                block_field_offset = 0
-                for child in dimension_type['children']:
-                    if child['name'] == 'blockLength':
-                        primitive_type = child['primitive_type']
-                        primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
-                        block_length_field = TypeMessageField(name=convert_to_underscore(child['name']),
-                                                              description=child['name'],
-                                                              unpack_fmt=endian+primitive_type_fmt,
-                                                              field_offset=block_field_offset,
-                                                              field_length=primitive_type_size)
-                        block_field_offset += primitive_type_size
-                    elif child['name'] == 'numInGroup':
-                        primitive_type = child['primitive_type']
-                        if 'offset' in child:
-                            block_field_offset = int(child['offset'])
-                        primitive_type_fmt, primitive_type_size = self.primitive_type_map[primitive_type]
-                        num_in_group_field = TypeMessageField(name=convert_to_underscore(child['name']),
-                                                              description=child['name'],
-                                                              unpack_fmt=endian+primitive_type_fmt,
-                                                              field_offset=block_field_offset,
-                                                              field_length=primitive_type_size)
-                        block_field_offset += primitive_type_size
-
-                group_field_offset = 0
-                group_fields = []
-                for group_field_def in group.get('fields', []):
-                    group_field = self._build_message_field(group_field_def, group_field_offset, add_header_size=False)
-                    group_field_offset += group_field.field_length
-                    group_fields.append(group_field)
-
-                repeating_group = SBERepeatingGroupIterator(name=group_name, block_length_field=block_length_field,
-                                                            num_in_group_field=num_in_group_field,
-                                                            dimension_size=block_field_offset,
-                                                            group_fields=group_fields)
-                repeating_groups.append(repeating_group)
-
-            for repeating_group in repeating_groups:
-                setattr(message_type, repeating_group.name, repeating_group)
-            setattr(message_type, 'iterators', repeating_groups)
-
-            self.message_map[message_id] = message_type
+            field_offset = self._construct_header(message)
+            self._construct_body(message, field_offset, endian)
 
     def load(self, messages):
         self.messages = messages

@@ -25,8 +25,8 @@ class SBEMessageField(object):
     def raw_value(self):
         return None
 
-    def __str__(self):
-        if self.value != self.raw_value:
+    def __str__(self, raw=False):
+        if raw and self.value != self.raw_value:
             return "%s: %s (%s)" % (self.name, str(self.value), str(self.raw_value),)
         return "%s: %s" % (self.name, str(self.value),)
 
@@ -176,19 +176,36 @@ class CompositeMessageField(SBEMessageField):
 
 
 class SBERepeatingGroup:
-    def __init__(self, fields):
+    def __init__(self, msg_buffer, msg_offset, relative_offset, name, fields):
+        self.msg_buffer = msg_buffer
+        self.msg_offset = msg_offset
+        self.relative_offset = relative_offset
         self.fields = fields
+        self._groups = []
+        self.name = name
 
         for field in fields:
             setattr(self, field.name, field)
 
-    def wrap(self, msg_buffer, msg_offset, group_start_offset):
+    def wrap(self):
         for field in self.fields:
-            field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
+            field.wrap(self.msg_buffer, self.msg_offset, relative_offset=self.relative_offset)
 
+    def add_subgroup(self, subgroup):
+        if not hasattr(self, subgroup.name):
+            setattr(self, subgroup.name, [subgroup])
+        else:
+            getattr(self, subgroup.name).append(subgroup)
+        self._groups.append(subgroup)
 
-class SBERepeatingGroupIterator(object):
-    def __init__(self, name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, group_fields=None):
+    @property
+    def groups(self):
+        for group in self._groups:
+            group.wrap()
+            yield group
+
+class SBERepeatingGroupContainer(object):
+    def __init__(self, name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
@@ -196,12 +213,13 @@ class SBERepeatingGroupIterator(object):
         self.name = name
         self.block_length_field = block_length_field
         self.num_in_group_field = num_in_group_field
-        self.block_length = 0
-        self.num_groups = 0
-        self.num_groups_read = 0
-        self.group_start_offset = 0
-        self.group_fields = group_fields
+
+        if fields is None:
+            self.fields = []
+        else:
+            self.fields = fields
         self.dimension_size = dimension_size
+        self._repeating_groups = None
 
     def wrap(self, msg_buffer, msg_offset, group_start_offset):
         self.msg_buffer = msg_buffer
@@ -210,26 +228,44 @@ class SBERepeatingGroupIterator(object):
 
         self.block_length_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         self.num_in_group_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
-        self.block_length = self.block_length_field.value
-        self.num_groups = self.num_in_group_field.value
-        return self.dimension_size + self.block_length * self.num_groups
+        block_length = self.block_length_field.value
+        num_groups = self.num_in_group_field.value
 
-    def __iter__(self):
-        self.num_groups_read = 0
-        return self
+        self._repeating_groups = []
+        self.group_offset = group_start_offset + self.dimension_size
 
-    def __len__(self):
-        return self.num_groups
+        # for each group, add the group length which can vary due to nested groups
+        repeated_group_offset = group_start_offset + self.dimension_size
+        nested_groups_length = 0
+        for i in range(num_groups):
+            repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.fields)
+            self._repeating_groups.append(repeated_group)
+            repeated_group_offset += block_length
+            # now account for any nested groups
+            for nested_group in self.groups:
+                nested_groups_length += nested_group.wrap(
+                    msg_buffer, msg_offset, repeated_group_offset + nested_groups_length)
+                for nested_repeating_group in nested_group._repeating_groups:
+                    repeated_group.add_subgroup(nested_repeating_group)
 
-    def next(self):
-        if self.num_groups_read < self.num_groups:
-            group_offset = self.group_start_offset + self.block_length * self.num_groups_read + self.dimension_size
-            group = SBERepeatingGroup(self.group_fields)
-            group.wrap(self.msg_buffer, self.msg_offset, group_offset)
-            self.num_groups_read += 1
-            return group
-        else:
-            raise StopIteration
+        size = self.dimension_size + (num_groups * block_length) + nested_groups_length
+        return size
+
+    @property
+    def num_groups(self):
+        return len(self._repeating_groups)
+
+    @property
+    def repeating_groups(self):
+        for group in self._repeating_groups:
+            group.wrap()
+            yield group
+
+    def __getitem__(self, index):
+        group = self._repeating_groups[index]
+        group.wrap()
+        return group
+
 
 
 class SBEMessage(object):
@@ -248,7 +284,7 @@ class SBEMessage(object):
 
         # Wrap the groups for decoding
         group_offset = self.schema_block_length + self.header_size
-        for group_iterator in self.iterators:
+        for group_iterator in self.groups:
             group_offset += group_iterator.wrap(msg_buffer, msg_offset, group_offset)
 
     def __str__(self):

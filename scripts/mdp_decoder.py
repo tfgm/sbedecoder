@@ -8,6 +8,7 @@ import sys
 import os.path
 from struct import unpack_from
 from datetime import datetime
+import binascii
 from sbedecoder import SBESchema
 from sbedecoder import SBEMessageFactory
 from sbedecoder import SBEParser
@@ -15,7 +16,20 @@ import gzip
 import dpkt
 
 
-def parse_mdp3_packet(mdp_parser, ts, data, skip_fields):
+def handle_repeating_groups(group_container, indent, skip_fields):
+    for group in group_container.groups:
+        print(':::{} - num_groups: {}'.format(group.name, group.num_groups))
+        for group_field in group.repeating_groups:
+            group_fields = ''
+            for group_field in group_field.fields:
+                group_fields += str(group_field) + ' '
+            print('::::{}'.format(group_fields))
+        handle_repeating_groups(group, indent + ':', skip_fields=skip_fields)
+
+
+def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data):
+    if print_data:
+        print('data: {}'.format(binascii.b2a_hex(data)))
     timestamp = datetime.fromtimestamp(ts)
     # parse the packet header: http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP+3.0+-+Binary+Packet+Header
     sequence_number = unpack_from("<i", data, offset=0)[0]
@@ -28,16 +42,10 @@ def parse_mdp3_packet(mdp_parser, ts, data, skip_fields):
             if field.name not in skip_fields:
                 message_fields += ' ' + str(field)
         print('::{} - {}'.format(mdp_message, message_fields))
-        for iterator in mdp_message.iterators:
-            print(':::{} - num_groups: {}'.format(iterator.name, iterator.num_groups))
-            for index, group in enumerate(iterator):
-                group_fields = ''
-                for group_field in group.fields:
-                    group_fields += str(group_field) + ' '
-                print('::::{}'.format(group_fields))
+        handle_repeating_groups(mdp_message, indent='::::', skip_fields=skip_fields)
 
 
-def process_file(args, pcap_filename):
+def process_file(args, pcap_filename, print_data):
     # Read in the schema xml as a dictionary and construct the various schema objects
     mdp_schema = SBESchema()
     mdp_schema.parse(args.schema)
@@ -57,7 +65,7 @@ def process_file(args, pcap_filename):
                 if ip.p == dpkt.ip.IP_PROTO_UDP:
                     udp = ip.data
                     try:
-                        parse_mdp3_packet(mdp_parser, ts, udp.data, skip_fields)
+                        parse_mdp3_packet(mdp_parser, ts, udp.data, skip_fields, print_data)
                     except Exception as e:
                         print('Error parsing packet #{} - {}'.format(packet_number, e))
 
@@ -80,6 +88,9 @@ def process_command_line():
     parser.add_argument("-f", "--skip-fields", default=default_skip_fields,
         help="Don't print these message fields (default={})".format(default_skip_fields))
 
+    parser.add_argument("--print-data", action='store_true',
+        help="Print the data as an ascii hex string (default: %(default)s)")
+
     args = parser.parse_args()
 
     # check number of arguments, verify values, etc.:
@@ -91,7 +102,7 @@ def process_command_line():
 
 def main(argv=None):
     args = process_command_line()
-    process_file(args, args.pcapfile)
+    process_file(args, args.pcapfile, args.print_data)
     return 0  # success
 
 

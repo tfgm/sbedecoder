@@ -115,7 +115,7 @@ def main(argv=None):
             message_fields.append(field_description)
 
         # Update the iterators
-        for msg_iter in message_class.iterators:
+        for msg_iter in message_class.groups:
             iter_description = {'name': msg_iter.name,
                                 'type': type(msg_iter).__name__,
                                 'dimension_size': msg_iter.dimension_size}
@@ -131,7 +131,7 @@ def main(argv=None):
                                                       'kwargs': num_in_group_field.__dict__}
 
             group_fields = []
-            for field in msg_iter.group_fields:
+            for field in msg_iter.fields:
                 field_description = build_field_description(field)
                 group_fields.append(field_description)
             iter_description['group_fields'] = group_fields
