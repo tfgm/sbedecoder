@@ -37,13 +37,13 @@ def process_command_line():
         version="0.1")
 
     arg_parser.add_argument("--schema", default='templates_FixBinary.xml',
-        help="Name of the SBE schema xml file")
+        help="Name of the SBE schema xml file (default: %(default)s)")
 
     arg_parser.add_argument("--output", default='generated.py',
-        help="Name of the generated output file.")
+        help="Name of the generated output file (default: %(default)s)")
 
     arg_parser.add_argument("--template", default='sbe_message.tmpl',
-        help="Name of template file to use for generating the class output")
+        help="Name of template file to use for generating the class output (default: %(default)s)")
 
     args = arg_parser.parse_args()
 
@@ -99,10 +99,10 @@ def main(argv=None):
                                'base_classes': ','.join([x.__name__ for x in message_class.__bases__]),
                                'attributes': {},
                                'fields': [],
-                               'iterators': []}
+                               'groups': []}
         message_attributes = message_description['attributes']
         message_fields = message_description['fields']
-        message_iterators = message_description['iterators']
+        message_groups = message_description['groups']
 
         # Update the common attributes for each of these messages
         message_attributes['message_id'] = message_class.message_id
@@ -114,28 +114,28 @@ def main(argv=None):
             field_description = build_field_description(field)
             message_fields.append(field_description)
 
-        # Update the iterators
-        for msg_iter in message_class.groups:
-            iter_description = {'name': msg_iter.name,
-                                'type': type(msg_iter).__name__,
-                                'dimension_size': msg_iter.dimension_size}
+        # Update the groups
+        for msg_groups in message_class.groups:
+            iter_description = {'name': msg_groups.name,
+                                'type': type(msg_groups).__name__,
+                                'dimension_size': msg_groups.dimension_size}
 
-            block_length_field = msg_iter.block_length_field
+            block_length_field = msg_groups.block_length_field
             iter_description['block_length_field'] = {'name': block_length_field.name,
                                                       'type': type(block_length_field).__name__,
                                                       'kwargs': block_length_field.__dict__}
 
-            num_in_group_field = msg_iter.num_in_group_field
+            num_in_group_field = msg_groups.num_in_group_field
             iter_description['num_in_group_field'] = {'name': num_in_group_field.name,
                                                       'type': type(num_in_group_field).__name__,
                                                       'kwargs': num_in_group_field.__dict__}
 
             group_fields = []
-            for field in msg_iter.fields:
+            for field in msg_groups.fields:
                 field_description = build_field_description(field)
                 group_fields.append(field_description)
-            iter_description['group_fields'] = group_fields
-            message_iterators.append(iter_description)
+            iter_description['fields'] = group_fields
+            message_groups.append(iter_description)
 
         message_descriptions.append(message_description)
 
