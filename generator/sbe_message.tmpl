@@ -10,7 +10,7 @@ ${docstring}
 '''
 %endif
 
-from sbedecoder.message import SBEMessage, SBERepeatingGroupIterator
+from sbedecoder.message import SBEMessage, SBERepeatingGroupContainer
 from sbedecoder.message import TypeMessageField, EnumMessageField, CompositeMessageField, SetMessageField
 
 ## Build a class definition for each message that is defined
@@ -92,15 +92,15 @@ class ${message_def.name}(${message_def.base_classes}):
         self.fields = []
         %endif
 
-        # Group Iterators
-        %if message_def.iterators:
-        %for group in message_def.iterators:
+        # Message Groups
+        %if message_def.groups:
+        %for group in message_def.groups:
         self.${group.name} = ${group.type}(name='${group.name}',
                                            dimension_size=${group.dimension_size},
                                            block_length_field=${group.block_length_field.type}(${str(group.block_length_field.kwargs)}),
                                            num_in_group_field=${group.num_in_group_field.type}(${str(group.num_in_group_field.kwargs)}),
-                                           group_fields=[
-                                               %for field in group.group_fields:
+                                           fields=[
+                                               %for field in group.fields:
                                                %if field.type == 'CompositeMessageField':
                                                ${field.type}(name='${field.name}',
                                                             field_length=${field.kwargs.field_length},
@@ -141,12 +141,12 @@ class ${message_def.name}(${message_def.base_classes}):
                                            ])
         %endfor
 
-        self.iterators = [
-        %for group in message_def.iterators:
+        self.groups = [
+        %for group in message_def.groups:
             self.${group.name},
         %endfor
         ]
         %else:
-        self.iterators = []
+        self.groups = []
         %endif
 </%def>

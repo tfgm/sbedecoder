@@ -205,7 +205,7 @@ class SBERepeatingGroup:
             yield group
 
 class SBERepeatingGroupContainer(object):
-    def __init__(self, name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None):
+    def __init__(self, name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None, groups=None):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
@@ -218,6 +218,12 @@ class SBERepeatingGroupContainer(object):
             self.fields = []
         else:
             self.fields = fields
+
+        if groups is None:
+            self.groups = []
+        else:
+            self.groups = groups
+
         self.dimension_size = dimension_size
         self._repeating_groups = None
 

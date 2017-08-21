@@ -33,7 +33,12 @@ class TestSBEParserLibrary:
 
     def test_security_status_reset_statistics(self):
         schema = SBESchema()
-        schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
+        try:
+            from sbedecoder.generated import __messages__ as generated_messages
+            schema.load(generated_messages)
+        except:
+            schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
+
         msg_factory = SBEMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
