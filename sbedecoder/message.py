@@ -32,12 +32,13 @@ class SBEMessageField(object):
 
 
 class TypeMessageField(SBEMessageField):
-    def __init__(self, name=None, description=None,
+    def __init__(self, name=None, id=None, description=None,
                  unpack_fmt=None, field_offset=None,
                  field_length=None, optional=False,
                  null_value=None, constant=None, is_string_type=False):
         super(SBEMessageField, self).__init__()
         self.name = name
+        self.id = id
         self.description = description
         self.unpack_fmt = unpack_fmt
         self.field_offset = field_offset

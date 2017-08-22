@@ -89,6 +89,7 @@ class SBESchema(object):
 
     def _build_message_field(self, field_definition, offset, header_size=10, endian='<', add_header_size=True):
         field_name = convert_to_underscore(field_definition['name'])
+        field_id = field_definition['id']
         field_description = field_definition['description']
         field_type = self.type_map[field_definition['type']]
         field_type_type = field_type['type']
@@ -134,7 +135,7 @@ class SBESchema(object):
             if 'null_value' in field_type:
                 null_value = long(field_type['null_value'])
 
-            message_field = TypeMessageField(name=field_name, description=field_description,
+            message_field = TypeMessageField(name=field_name, id=field_id, description=field_description,
                                              unpack_fmt=unpack_fmt, field_offset=field_offset,
                                              field_length=field_length, null_value=null_value,
                                              constant=constant, optional=optional,
