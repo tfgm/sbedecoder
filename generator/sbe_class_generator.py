@@ -117,16 +117,19 @@ def main(argv=None):
         # Update the groups
         for msg_groups in message_class.groups:
             iter_description = {'name': msg_groups.name,
+                                'original_name': msg_groups.original_name,
                                 'type': type(msg_groups).__name__,
                                 'dimension_size': msg_groups.dimension_size}
 
             block_length_field = msg_groups.block_length_field
             iter_description['block_length_field'] = {'name': block_length_field.name,
+                                                      'original_name': block_length_field.original_name,
                                                       'type': type(block_length_field).__name__,
                                                       'kwargs': block_length_field.__dict__}
 
             num_in_group_field = msg_groups.num_in_group_field
             iter_description['num_in_group_field'] = {'name': num_in_group_field.name,
+                                                      'original_name': num_in_group_field.original_name,
                                                       'type': type(num_in_group_field).__name__,
                                                       'kwargs': num_in_group_field.__dict__}
 

@@ -5,6 +5,8 @@ import math
 class SBEMessageField(object):
     def __init__(self):
         self.name = None
+        self.original_name = None
+        self.id = None
         self.description = None
         self.msg_buffer = None
         self.msg_offset = None
@@ -32,12 +34,14 @@ class SBEMessageField(object):
 
 
 class TypeMessageField(SBEMessageField):
-    def __init__(self, name=None, id=None, description=None,
+    def __init__(self, name=None, original_name=None,
+                 id=None, description=None,
                  unpack_fmt=None, field_offset=None,
                  field_length=None, optional=False,
                  null_value=None, constant=None, is_string_type=False):
         super(SBEMessageField, self).__init__()
         self.name = name
+        self.original_name = original_name
         self.id = id
         self.description = description
         self.unpack_fmt = unpack_fmt
@@ -76,10 +80,12 @@ class TypeMessageField(SBEMessageField):
 
 
 class SetMessageField(SBEMessageField):
-    def __init__(self, name=None, description=None, unpack_fmt=None, field_offset=None,
+    def __init__(self, name=None, original_name=None, id=None, description=None, unpack_fmt=None, field_offset=None,
                  choices=None, field_length=None):
         super(SBEMessageField, self).__init__()
         self.name = name
+        self.original_name = original_name
+        self.id = id
         self.description = description
         self.unpack_fmt = unpack_fmt
         self.field_offset = field_offset
@@ -109,10 +115,12 @@ class SetMessageField(SBEMessageField):
 
 
 class EnumMessageField(SBEMessageField):
-    def __init__(self, name=None, description=None, unpack_fmt=None, field_offset=None,
+    def __init__(self, name=None, original_name=None, id=None, description=None, unpack_fmt=None, field_offset=None,
                  enum_values=None, field_length=None):
         super(SBEMessageField, self).__init__()
         self.name = name
+        self.original_name = original_name
+        self.id = id
         self.description = description
         self.unpack_fmt = unpack_fmt
         self.field_offset = field_offset
@@ -134,10 +142,12 @@ class EnumMessageField(SBEMessageField):
 
 
 class CompositeMessageField(SBEMessageField):
-    def __init__(self, name=None, description=None, field_offset=None, field_length=None,
+    def __init__(self, name=None, original_name=None, id=None, description=None, field_offset=None, field_length=None,
                  parts=None, float_value=False):
         super(SBEMessageField, self).__init__()
         self.name = name
+        self.original_name = original_name
+        self.id = id
         self.description = description
         self.field_offset = field_offset
         self.field_length = field_length
@@ -177,13 +187,14 @@ class CompositeMessageField(SBEMessageField):
 
 
 class SBERepeatingGroup:
-    def __init__(self, msg_buffer, msg_offset, relative_offset, name, fields):
+    def __init__(self, msg_buffer, msg_offset, relative_offset, name, original_name, fields):
         self.msg_buffer = msg_buffer
         self.msg_offset = msg_offset
         self.relative_offset = relative_offset
         self.fields = fields
         self._groups = []
         self.name = name
+        self.original_name = original_name
 
         for field in fields:
             setattr(self, field.name, field)
@@ -206,12 +217,13 @@ class SBERepeatingGroup:
             yield group
 
 class SBERepeatingGroupContainer(object):
-    def __init__(self, name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None, groups=None):
+    def __init__(self, name=None, original_name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None, groups=None):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
 
         self.name = name
+        self.original_name = original_name
         self.block_length_field = block_length_field
         self.num_in_group_field = num_in_group_field
 
@@ -245,7 +257,7 @@ class SBERepeatingGroupContainer(object):
         repeated_group_offset = group_start_offset + self.dimension_size
         nested_groups_length = 0
         for i in range(num_groups):
-            repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.fields)
+            repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.original_name, self.fields)
             self._repeating_groups.append(repeated_group)
             repeated_group_offset += block_length
             # now account for any nested groups
