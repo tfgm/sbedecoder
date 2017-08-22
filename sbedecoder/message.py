@@ -217,13 +217,14 @@ class SBERepeatingGroup:
             yield group
 
 class SBERepeatingGroupContainer(object):
-    def __init__(self, name=None, original_name=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None, groups=None):
+    def __init__(self, name=None, original_name=None, id=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None, groups=None):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
 
         self.name = name
         self.original_name = original_name
+        self.id = id
         self.block_length_field = block_length_field
         self.num_in_group_field = num_in_group_field
 

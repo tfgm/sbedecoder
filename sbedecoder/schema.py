@@ -334,6 +334,7 @@ class SBESchema(object):
 
             group_field_offset = 0
             repeating_group = SBERepeatingGroupContainer(name=group_name, original_name=group_original_name,
+                                                         id=int(group_type['id']),
                                                          block_length_field=block_length_field,
                                                          num_in_group_field=num_in_group_field,
                                                          dimension_size=block_field_offset)

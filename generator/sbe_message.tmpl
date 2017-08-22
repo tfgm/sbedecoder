@@ -103,6 +103,7 @@ class ${message_def.name}(${message_def.base_classes}):
         %for group in message_def.groups:
         self.${group.name} = ${group.type}(name='${group.name}',
                                            original_name='${group.original_name}',
+                                           id=${group.id},
                                            dimension_size=${group.dimension_size},
                                            block_length_field=${group.block_length_field.type}(${str(group.block_length_field.kwargs)}),
                                            num_in_group_field=${group.num_in_group_field.type}(${str(group.num_in_group_field.kwargs)}),
