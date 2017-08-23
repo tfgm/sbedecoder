@@ -47,10 +47,13 @@ class ${message_def.name}(${message_def.base_classes}):
         %for field in message_def.fields:
         %if field.type == 'CompositeMessageField':
         self.${field.name} = ${field.type}(name='${field.name}',
+                                           original_name='${field.kwargs.original_name}',
+                                           id=${field.kwargs.id},
                                            field_length=${field.kwargs.field_length},
                                            field_offset=${field.kwargs.field_offset},
                                            float_value=${field.kwargs.float_value},
                                            description='''${field.kwargs.description}''',
+                                           semantic_type='${field.kwargs.semantic_type}',
                                            parts=[
                                                %for part in field.kwargs.parts:
                                                ${part.type}(${str(part.kwargs)}),
@@ -58,10 +61,13 @@ class ${message_def.name}(${message_def.base_classes}):
                                            ])
         %elif field.type == 'EnumMessageField':
         self.${field.name} = ${field.type}(name='${field.name}',
+                                           original_name='${field.kwargs.original_name}',
+                                           id=${field.kwargs.id},
                                            unpack_fmt='${field.kwargs.unpack_fmt}',
                                            description='''${field.kwargs.description}''',
                                            field_offset=${field.kwargs.field_offset},
                                            field_length=${field.kwargs.field_length},
+                                           semantic_type='${field.kwargs.semantic_type}',
                                            enum_values=[
                                                %for enum_val in field.kwargs.enum_values:
                                                ${enum_val.__dict__},
@@ -69,10 +75,13 @@ class ${message_def.name}(${message_def.base_classes}):
                                            ])
         %elif field.type == 'SetMessageField':
         self.${field.name} = ${field.type}(name='${field.name}',
+                                           original_name='${field.kwargs.original_name}',
+                                           id=${field.kwargs.id},
                                            unpack_fmt='${field.kwargs.unpack_fmt}',
                                            description='''${field.kwargs.description}''',
                                            field_offset=${field.kwargs.field_offset},
                                            field_length=${field.kwargs.field_length},
+                                           semantic_type='${field.kwargs.semantic_type}',
                                            choices=[
                                             %for choice_val in field.kwargs.choices:
                                             ${choice_val.__dict__},
@@ -96,6 +105,8 @@ class ${message_def.name}(${message_def.base_classes}):
         %if message_def.groups:
         %for group in message_def.groups:
         self.${group.name} = ${group.type}(name='${group.name}',
+                                           original_name='${group.original_name}',
+                                           id=${group.id},
                                            dimension_size=${group.dimension_size},
                                            block_length_field=${group.block_length_field.type}(${str(group.block_length_field.kwargs)}),
                                            num_in_group_field=${group.num_in_group_field.type}(${str(group.num_in_group_field.kwargs)}),
@@ -103,10 +114,13 @@ class ${message_def.name}(${message_def.base_classes}):
                                                %for field in group.fields:
                                                %if field.type == 'CompositeMessageField':
                                                ${field.type}(name='${field.name}',
+                                                            original_name='${field.kwargs.original_name}',
+                                                            id=${field.kwargs.id},
                                                             field_length=${field.kwargs.field_length},
                                                             field_offset=${field.kwargs.field_offset},
                                                             description='''${field.kwargs.description}''',
                                                             float_value=${field.kwargs.float_value},
+                                                            semantic_type='${field.kwargs.semantic_type}',
                                                             parts=[
                                                                 %for part in field.kwargs.parts:
                                                                 ${part.type}(${str(part.kwargs)}),
@@ -114,10 +128,13 @@ class ${message_def.name}(${message_def.base_classes}):
                                                             ]),
                                                %elif field.type == 'EnumMessageField':
                                                ${field.type}(name='${field.name}',
+                                                             original_name='${field.kwargs.original_name}',
+                                                             id=${field.kwargs.id},
                                                              unpack_fmt='${field.kwargs.unpack_fmt}',
                                                              description='''${field.kwargs.description}''',
                                                              field_offset=${field.kwargs.field_offset},
                                                              field_length=${field.kwargs.field_length},
+                                                             semantic_type='${field.kwargs.semantic_type}',
                                                              enum_values=[
                                                                  %for enum_val in field.kwargs.enum_values:
                                                                  ${enum_val.__dict__},
@@ -125,10 +142,13 @@ class ${message_def.name}(${message_def.base_classes}):
                                                              ]),
                                                %elif field.type == 'SetMessageField':
                                                ${field.type}(name='${field.name}',
+                                                             original_name='${field.kwargs.original_name}',
+                                                             id=${field.kwargs.id},
                                                              unpack_fmt='${field.kwargs.unpack_fmt}',
                                                              description='''${field.kwargs.description}''',
                                                              field_offset=${field.kwargs.field_offset},
                                                              field_length=${field.kwargs.field_length},
+                                                             semantic_type='${field.kwargs.semantic_type}',
                                                              choices=[
                                                                  %for choice_val in field.kwargs.choices:
                                                                  ${choice_val.__dict__},
