@@ -53,6 +53,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            field_offset=${field.kwargs.field_offset},
                                            float_value=${field.kwargs.float_value},
                                            description='''${field.kwargs.description}''',
+                                           semantic_type='${field.kwargs.semantic_type}',
                                            parts=[
                                                %for part in field.kwargs.parts:
                                                ${part.type}(${str(part.kwargs)}),
@@ -66,6 +67,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            description='''${field.kwargs.description}''',
                                            field_offset=${field.kwargs.field_offset},
                                            field_length=${field.kwargs.field_length},
+                                           semantic_type='${field.kwargs.semantic_type}',
                                            enum_values=[
                                                %for enum_val in field.kwargs.enum_values:
                                                ${enum_val.__dict__},
@@ -79,6 +81,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            description='''${field.kwargs.description}''',
                                            field_offset=${field.kwargs.field_offset},
                                            field_length=${field.kwargs.field_length},
+                                           semantic_type='${field.kwargs.semantic_type}',
                                            choices=[
                                             %for choice_val in field.kwargs.choices:
                                             ${choice_val.__dict__},
@@ -117,6 +120,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                                             field_offset=${field.kwargs.field_offset},
                                                             description='''${field.kwargs.description}''',
                                                             float_value=${field.kwargs.float_value},
+                                                            semantic_type='${field.kwargs.semantic_type}',
                                                             parts=[
                                                                 %for part in field.kwargs.parts:
                                                                 ${part.type}(${str(part.kwargs)}),
@@ -130,6 +134,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                                              description='''${field.kwargs.description}''',
                                                              field_offset=${field.kwargs.field_offset},
                                                              field_length=${field.kwargs.field_length},
+                                                             semantic_type='${field.kwargs.semantic_type}',
                                                              enum_values=[
                                                                  %for enum_val in field.kwargs.enum_values:
                                                                  ${enum_val.__dict__},
@@ -143,6 +148,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                                              description='''${field.kwargs.description}''',
                                                              field_offset=${field.kwargs.field_offset},
                                                              field_length=${field.kwargs.field_length},
+                                                             semantic_type='${field.kwargs.semantic_type}',
                                                              choices=[
                                                                  %for choice_val in field.kwargs.choices:
                                                                  ${choice_val.__dict__},

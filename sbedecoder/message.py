@@ -38,7 +38,8 @@ class TypeMessageField(SBEMessageField):
                  id=None, description=None,
                  unpack_fmt=None, field_offset=None,
                  field_length=None, optional=False,
-                 null_value=None, constant=None, is_string_type=False):
+                 null_value=None, constant=None, is_string_type=False,
+                 semantic_type=None):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -51,6 +52,7 @@ class TypeMessageField(SBEMessageField):
         self.null_value = null_value
         self.constant = constant
         self.is_string_type = is_string_type
+        self.semantic_type = semantic_type
 
     @property
     def value(self):
@@ -81,7 +83,7 @@ class TypeMessageField(SBEMessageField):
 
 class SetMessageField(SBEMessageField):
     def __init__(self, name=None, original_name=None, id=None, description=None, unpack_fmt=None, field_offset=None,
-                 choices=None, field_length=None):
+                 choices=None, field_length=None, semantic_type=None):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -92,6 +94,7 @@ class SetMessageField(SBEMessageField):
         self.choices = choices
         self.field_length = field_length
         self.text_to_name = dict((int(x['text']), x['name']) for x in choices)
+        self.semantic_type = semantic_type
 
     @property
     def value(self):
@@ -116,7 +119,7 @@ class SetMessageField(SBEMessageField):
 
 class EnumMessageField(SBEMessageField):
     def __init__(self, name=None, original_name=None, id=None, description=None, unpack_fmt=None, field_offset=None,
-                 enum_values=None, field_length=None):
+                 enum_values=None, field_length=None, semantic_type=None):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -127,6 +130,7 @@ class EnumMessageField(SBEMessageField):
         self.enum_values = enum_values
         self.field_length = field_length
         self.text_to_enum_value = dict((x['text'], x['description']) for x in enum_values)
+        self.semantic_type = semantic_type
 
     @property
     def value(self):
@@ -143,7 +147,7 @@ class EnumMessageField(SBEMessageField):
 
 class CompositeMessageField(SBEMessageField):
     def __init__(self, name=None, original_name=None, id=None, description=None, field_offset=None, field_length=None,
-                 parts=None, float_value=False):
+                 parts=None, float_value=False, semantic_type=None):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -153,6 +157,7 @@ class CompositeMessageField(SBEMessageField):
         self.field_length = field_length
         self.parts = parts
         self.float_value = float_value
+        self.semantic_type = semantic_type
 
         # Map the parts
         for part in self.parts:
