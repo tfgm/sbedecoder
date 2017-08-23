@@ -106,18 +106,17 @@ class SBESchema(object):
 
             primitive_type_fmt, primitive_type_size = self.primitive_type_map[field_type['primitive_type']]
 
-            unpack_fmt = endian
             field_length = field_type.get('length', None)
             if field_length is not None:
                 field_length = int(field_length)
-                if is_string_type:
-                    unpack_fmt += '%ss' % (str(field_length), )
+                if is_string_type or (primitive_type_fmt == 'c' and field_length > 1):
+                    unpack_fmt = '%ds' % field_length
                 else:
-                    unpack_fmt += '%s%s' % (str(field_length), primitive_type_fmt)
+                    unpack_fmt = '%s%s%s' % (endian, str(field_length), primitive_type_fmt)
             else:
                 # Field length is just the primitive type length
                 field_length = primitive_type_size
-                unpack_fmt += primitive_type_fmt
+                unpack_fmt = '%s%s' % (endian, primitive_type_fmt)
 
             constant = None
             optional = False
