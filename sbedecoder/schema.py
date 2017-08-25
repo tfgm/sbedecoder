@@ -95,10 +95,11 @@ class SBESchema(object):
         field_type = self.type_map[field_definition['type']]
         field_type_type = field_type['type']
         field_semantic_type = field_definition.get('semantic_type', None)
-        is_string_type = (field_semantic_type == 'String')
 
         message_field = None
         if field_type_type == 'type':
+            is_string_type = field_type['primitive_type'] == 'char' and 'length' in field_type and int(
+                field_type['length']) > 1
             field_offset = offset
             if field_definition.get('offset', None) is not None:
                 field_offset = int(field_definition.get('offset', None))
@@ -110,8 +111,8 @@ class SBESchema(object):
             field_length = field_type.get('length', None)
             if field_length is not None:
                 field_length = int(field_length)
-                if is_string_type or (primitive_type_fmt == 'c' and field_length > 1):
-                    unpack_fmt = '%ds' % field_length
+                if is_string_type:
+                    unpack_fmt = '%ds' % field_length # unpack as string (which may be null-terminated if shorter)
                 else:
                     unpack_fmt = '%s%s%s' % (endian, str(field_length), primitive_type_fmt)
             else:
