@@ -129,20 +129,28 @@ class EnumMessageField(SBEMessageField):
         self.field_offset = field_offset
         self.enum_values = enum_values
         self.field_length = field_length
-        self.text_to_enum_value = dict((x['text'], x['description']) for x in enum_values)
+        self.text_to_enum_description = dict((x['text'], x['description']) for x in enum_values)
+        self.text_to_enumerant = dict((x['text'], x['name']) for x in enum_values) # shorter repr of value
         self.semantic_type = semantic_type
 
     @property
     def value(self):
         _raw_value = self.raw_value
-        _value = self.text_to_enum_value.get(str(_raw_value), None)
+        _value = self.text_to_enum_description.get(str(_raw_value), None)
         return _value
+
+    @property
+    def enumerant(self):
+        _raw_value = self.raw_value
+        _enumerant = self.text_to_enumerant.get(str(_raw_value), None)
+        return _enumerant
 
     @property
     def raw_value(self):
         _raw_value = unpack_from(self.unpack_fmt, self.msg_buffer,
                                  self.msg_offset + self.relative_offset + self.field_offset)[0]
         return _raw_value
+
 
 
 class CompositeMessageField(SBEMessageField):
