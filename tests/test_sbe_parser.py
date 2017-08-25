@@ -57,10 +57,13 @@ class TestSBEParserLibrary:
         assert_equals(17389, recorded_message.trade_date.value)
         assert_equals(1502401500001346819, recorded_message.transact_time.value)
         assert_equals('Reset Statistics', recorded_message.security_trading_event.value)
+        assert_equals('ResetStatistics', recorded_message.security_trading_event.enumerant)
         assert_equals('Pre Open', recorded_message.security_trading_status.value)
+        assert_equals('PreOpen', recorded_message.security_trading_status.enumerant)
         assert_equals('ES', recorded_message.security_group.value)
         assert_equals('', recorded_message.asset.value)
         assert_equals('Group Schedule', recorded_message.halt_reason.value)
+        assert_equals('GroupSchedule', recorded_message.halt_reason.enumerant)
         assert_equals(None, recorded_message.security_id.value)
 
     def test_security_status(self):
