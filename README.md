@@ -28,6 +28,10 @@ data (buffer, str, bytearay, etc):
     for message in message_parser.parse(data, offset=offset):
         process(message)
 
+Note: Unless using code generation, you cannot store the messages for later processing.
+You must process the messages on each iteration, because the messages re-use instances of
+field objects, wrapping them around new values.
+
 A parsed message is represented as an instance of
 the SBEMessage() class.  SBEMessages are comprised of zero or more sbedecoder.message.SBEField() instances and 
 zero or more sbedecoder.message.SBERepeatingGroup() instances. An SBEField() object can be one of a primitive 
@@ -78,6 +82,13 @@ mdp_book_builder.py serves as an example of using the sbedecoder package to buil
 For help with using mdp_book_builder.py:
 
     mdp_book_builder.py --help
+
+Versioning
+----------
+
+sbedecoder supports the `sinceVersion` attribute of fields, enumerants, groups, ..., etc, and so it can
+decode older (e.g. archived) binary data so long as the schema has evolved correctly to maintain support
+for the old format
 
 Performance
 -----------

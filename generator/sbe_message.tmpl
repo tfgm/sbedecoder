@@ -54,6 +54,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            float_value=${field.kwargs.float_value},
                                            description='''${field.kwargs.description}''',
                                            semantic_type='${field.kwargs.semantic_type}',
+                                           since_version=${field.kwargs.since_version},
                                            parts=[
                                                %for part in field.kwargs.parts:
                                                ${part.type}(${str(part.kwargs)}),
@@ -68,6 +69,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            field_offset=${field.kwargs.field_offset},
                                            field_length=${field.kwargs.field_length},
                                            semantic_type='${field.kwargs.semantic_type}',
+                                           since_version=${field.kwargs.since_version},
                                            enum_values=[
                                                %for enum_val in field.kwargs.enum_values:
                                                ${enum_val.__dict__},
@@ -82,6 +84,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            field_offset=${field.kwargs.field_offset},
                                            field_length=${field.kwargs.field_length},
                                            semantic_type='${field.kwargs.semantic_type}',
+                                           since_version=${field.kwargs.since_version},
                                            choices=[
                                             %for choice_val in field.kwargs.choices:
                                             ${choice_val.__dict__},
@@ -110,6 +113,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                            dimension_size=${group.dimension_size},
                                            block_length_field=${group.block_length_field.type}(${str(group.block_length_field.kwargs)}),
                                            num_in_group_field=${group.num_in_group_field.type}(${str(group.num_in_group_field.kwargs)}),
+                                           since_version=${group.since_version},
                                            fields=[
                                                %for field in group.fields:
                                                %if field.type == 'CompositeMessageField':
@@ -121,6 +125,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                                             description='''${field.kwargs.description}''',
                                                             float_value=${field.kwargs.float_value},
                                                             semantic_type='${field.kwargs.semantic_type}',
+                                                            since_version=${field.kwargs.since_version},
                                                             parts=[
                                                                 %for part in field.kwargs.parts:
                                                                 ${part.type}(${str(part.kwargs)}),
@@ -135,6 +140,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                                              field_offset=${field.kwargs.field_offset},
                                                              field_length=${field.kwargs.field_length},
                                                              semantic_type='${field.kwargs.semantic_type}',
+                                                             since_version=${field.kwargs.since_version},
                                                              enum_values=[
                                                                  %for enum_val in field.kwargs.enum_values:
                                                                  ${enum_val.__dict__},
@@ -149,6 +155,7 @@ class ${message_def.name}(${message_def.base_classes}):
                                                              field_offset=${field.kwargs.field_offset},
                                                              field_length=${field.kwargs.field_length},
                                                              semantic_type='${field.kwargs.semantic_type}',
+                                                             since_version=${field.kwargs.since_version},
                                                              choices=[
                                                                  %for choice_val in field.kwargs.choices:
                                                                  ${choice_val.__dict__},
