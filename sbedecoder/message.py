@@ -39,7 +39,7 @@ class TypeMessageField(SBEMessageField):
                  unpack_fmt=None, field_offset=None,
                  field_length=None, optional=False,
                  null_value=None, constant=None, is_string_type=False,
-                 semantic_type=None):
+                 semantic_type=None, since_version=0):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -53,6 +53,7 @@ class TypeMessageField(SBEMessageField):
         self.constant = constant
         self.is_string_type = is_string_type
         self.semantic_type = semantic_type
+        self.since_version = since_version
 
     @property
     def value(self):
@@ -83,7 +84,7 @@ class TypeMessageField(SBEMessageField):
 
 class SetMessageField(SBEMessageField):
     def __init__(self, name=None, original_name=None, id=None, description=None, unpack_fmt=None, field_offset=None,
-                 choices=None, field_length=None, semantic_type=None):
+                 choices=None, field_length=None, semantic_type=None, since_version=0):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -95,6 +96,7 @@ class SetMessageField(SBEMessageField):
         self.field_length = field_length
         self.text_to_name = dict((int(x['text']), x['name']) for x in choices)
         self.semantic_type = semantic_type
+        self.since_version = since_version
 
     @property
     def value(self):
@@ -119,7 +121,7 @@ class SetMessageField(SBEMessageField):
 
 class EnumMessageField(SBEMessageField):
     def __init__(self, name=None, original_name=None, id=None, description=None, unpack_fmt=None, field_offset=None,
-                 enum_values=None, field_length=None, semantic_type=None):
+                 enum_values=None, field_length=None, semantic_type=None, since_version=0):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -132,6 +134,7 @@ class EnumMessageField(SBEMessageField):
         self.text_to_enum_description = dict((x['text'], x['description']) for x in enum_values)
         self.text_to_enumerant = dict((x['text'], x['name']) for x in enum_values) # shorter repr of value
         self.semantic_type = semantic_type
+        self.since_version = since_version
 
     @property
     def value(self):
@@ -155,7 +158,7 @@ class EnumMessageField(SBEMessageField):
 
 class CompositeMessageField(SBEMessageField):
     def __init__(self, name=None, original_name=None, id=None, description=None, field_offset=None, field_length=None,
-                 parts=None, float_value=False, semantic_type=None):
+                 parts=None, float_value=False, semantic_type=None, since_version=0):
         super(SBEMessageField, self).__init__()
         self.name = name
         self.original_name = original_name
@@ -166,6 +169,7 @@ class CompositeMessageField(SBEMessageField):
         self.parts = parts
         self.float_value = float_value
         self.semantic_type = semantic_type
+        self.since_version = since_version
 
         # Map the parts
         for part in self.parts:
@@ -230,7 +234,9 @@ class SBERepeatingGroup:
             yield group
 
 class SBERepeatingGroupContainer(object):
-    def __init__(self, name=None, original_name=None, id=None, block_length_field=None, num_in_group_field=None, dimension_size=None, fields=None, groups=None):
+    def __init__(self, name=None, original_name=None, id=None, block_length_field=None,
+                 num_in_group_field=None, dimension_size=None, fields=None, groups=None,
+                 since_version=0):
         self.msg_buffer = None
         self.msg_offset = 0
         self.group_start_offset = 0
@@ -250,6 +256,7 @@ class SBERepeatingGroupContainer(object):
             self.groups = []
         else:
             self.groups = groups
+        self.since_version = since_version
 
         self.dimension_size = dimension_size
         self._repeating_groups = None
@@ -262,7 +269,7 @@ class SBERepeatingGroupContainer(object):
         self.block_length_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         self.num_in_group_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         block_length = self.block_length_field.value
-        num_groups = self.num_in_group_field.value
+        num_instances = self.num_in_group_field.value
 
         self._repeating_groups = []
         self.group_offset = group_start_offset + self.dimension_size
@@ -270,7 +277,7 @@ class SBERepeatingGroupContainer(object):
         # for each group, add the group length which can vary due to nested groups
         repeated_group_offset = group_start_offset + self.dimension_size
         nested_groups_length = 0
-        for i in range(num_groups):
+        for i in range(num_instances):
             repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.original_name, self.fields)
             self._repeating_groups.append(repeated_group)
             repeated_group_offset += block_length
@@ -281,7 +288,7 @@ class SBERepeatingGroupContainer(object):
                 for nested_repeating_group in nested_group._repeating_groups:
                     repeated_group.add_subgroup(nested_repeating_group)
 
-        size = self.dimension_size + (num_groups * block_length) + nested_groups_length
+        size = self.dimension_size + (num_instances * block_length) + nested_groups_length
         return size
 
     @property
@@ -312,13 +319,19 @@ class SBEMessage(object):
         self.msg_buffer = msg_buffer
         self.msg_offset = msg_offset
 
+        message_version = 0
         for field in self.fields:
+            if message_version > 0 and field.since_version > message_version:
+                continue
             field.wrap(msg_buffer, msg_offset)
+            if field.name == 'version': # as we're iterating fields, save the version, which comes early as part of header
+                message_version = field.value
 
         # Wrap the groups for decoding
         group_offset = self.schema_block_length + self.header_size
-        for group_iterator in self.groups:
-            group_offset += group_iterator.wrap(msg_buffer, msg_offset, group_offset)
+        for group in self.groups:
+            if group.since_version <= message_version:
+                group_offset += group.wrap(msg_buffer, msg_offset, group_offset)
 
     def __str__(self):
         return '%s' % (self.__class__.__name__,)
