@@ -95,6 +95,7 @@ class SBESchema(object):
         field_type = self.type_map[field_definition['type']]
         field_type_type = field_type['type']
         field_semantic_type = field_definition.get('semantic_type', None)
+        field_since_version = int(field_definition.get('since_version','0'))
 
         message_field = None
         if field_type_type == 'type':
@@ -142,7 +143,8 @@ class SBESchema(object):
                                              field_length=field_length, null_value=null_value,
                                              constant=constant, optional=optional,
                                              is_string_type=is_string_type,
-                                             semantic_type=field_semantic_type)
+                                             semantic_type=field_semantic_type,
+                                             since_version=field_since_version)
         elif field_type_type == 'enum':
             encoding_type = field_type['encoding_type']
             encoding_type_type = self.type_map[encoding_type]
@@ -174,7 +176,8 @@ class SBESchema(object):
                                              field_offset=field_offset,
                                              enum_values=enum_values,
                                              field_length=field_length,
-                                             semantic_type=field_semantic_type)
+                                             semantic_type=field_semantic_type,
+                                             since_version=field_since_version)
         elif field_type_type == 'set':
             encoding_type = field_type['encoding_type']
             encoding_type_type = self.type_map[encoding_type]
@@ -201,7 +204,7 @@ class SBESchema(object):
             message_field = SetMessageField(name=field_name, original_name=field_original_name,
                                             id=field_id, description=field_description, unpack_fmt=unpack_fmt,
                                             field_offset=field_offset, choices=choice_values, field_length=field_length,
-                                            semantic_type=field_semantic_type)
+                                            semantic_type=field_semantic_type, since_version=field_since_version)
         elif field_type_type == 'composite':
             composite_parts = []
 
@@ -216,6 +219,7 @@ class SBESchema(object):
             for child in field_type['children']:
                 primitive_type_fmt, primitive_type_size = self.primitive_type_map[child['primitive_type']]
                 unpack_fmt = endian + primitive_type_fmt
+                child_since_version = int(child.get('since_version', '0'))
 
                 constant = None
                 optional = False
@@ -242,7 +246,8 @@ class SBESchema(object):
                                                    unpack_fmt=unpack_fmt, field_offset=field_offset,
                                                    field_length=primitive_type_size,
                                                    null_value=null_value, constant=constant,
-                                                   optional=optional, semantic_type=field_semantic_type)
+                                                   optional=optional, semantic_type=field_semantic_type,
+                                                   since_version=child_since_version)
                 field_offset += primitive_type_size
                 field_length += primitive_type_size
                 composite_parts.append(composite_field)
@@ -251,7 +256,8 @@ class SBESchema(object):
                                                   id=field_id, description=field_description,
                                                   field_offset=field_offset, field_length=field_length,
                                                   parts=composite_parts,
-                                                  float_value=float_composite, semantic_type=field_semantic_type)
+                                                  float_value=float_composite, semantic_type=field_semantic_type,
+                                                  since_version=field_since_version)
         return message_field
 
     def get_message_type(self, template_id):
@@ -306,6 +312,7 @@ class SBESchema(object):
         for group_type in entity.get('groups', []):
             group_name = convert_to_underscore(group_type['name'])
             group_original_name = group_type['name']
+            group_since_version = int(group_type.get('since_version','0'))
             dimension_type = self.type_map[group_type['dimension_type']]
             # There are two fields we care about, block_length and num_in_group
             block_length_field = None
@@ -342,7 +349,8 @@ class SBESchema(object):
                                                          id=int(group_type['id']),
                                                          block_length_field=block_length_field,
                                                          num_in_group_field=num_in_group_field,
-                                                         dimension_size=block_field_offset)
+                                                         dimension_size=block_field_offset,
+                                                         since_version=group_since_version)
 
             self._add_fields(group_field_offset, group_type, repeating_group, endian, add_header_size=False)
 

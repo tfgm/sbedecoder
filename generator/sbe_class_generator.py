@@ -115,27 +115,28 @@ def main(argv=None):
             message_fields.append(field_description)
 
         # Update the groups
-        for msg_groups in message_class.groups:
-            group_description = {'name': msg_groups.name,
-                                'original_name': msg_groups.original_name,
-                                'id': msg_groups.id,
-                                'type': type(msg_groups).__name__,
-                                'dimension_size': msg_groups.dimension_size}
+        for repeating_group in message_class.groups:
+            group_description = {'name': repeating_group.name,
+                                'original_name': repeating_group.original_name,
+                                'id': repeating_group.id,
+                                'type': type(repeating_group).__name__,
+                                'dimension_size': repeating_group.dimension_size,
+                                'since_version': repeating_group.since_version}
 
-            block_length_field = msg_groups.block_length_field
+            block_length_field = repeating_group.block_length_field
             group_description['block_length_field'] = {'name': block_length_field.name,
                                                       'original_name': block_length_field.original_name,
                                                       'type': type(block_length_field).__name__,
                                                       'kwargs': block_length_field.__dict__}
 
-            num_in_group_field = msg_groups.num_in_group_field
+            num_in_group_field = repeating_group.num_in_group_field
             group_description['num_in_group_field'] = {'name': num_in_group_field.name,
                                                       'original_name': num_in_group_field.original_name,
                                                       'type': type(num_in_group_field).__name__,
                                                       'kwargs': num_in_group_field.__dict__}
 
             group_fields = []
-            for field in msg_groups.fields:
+            for field in repeating_group.fields:
                 field_description = build_field_description(field)
                 group_fields.append(field_description)
             group_description['fields'] = group_fields
