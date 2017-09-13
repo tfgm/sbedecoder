@@ -12,7 +12,7 @@ import binascii
 from sbedecoder import SBESchema
 from sbedecoder import SBEMessageFactory
 from sbedecoder import SBEParser
-import mdp_prettyprinter
+import mdp.prettyprinter
 import gzip
 import dpkt
 
@@ -52,7 +52,7 @@ def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data, pretty):
         n = len(list(mdp_parser.parse(data, offset=12)))  # pass 1 to count the msgs in iterable
 
         for i, mdp_message in enumerate(mdp_parser.parse(data, offset=12)):  # pass 2 to actually print
-            mdp_prettyprinter.pretty_print(mdp_message, i, n)
+            mdp.prettyprinter.pretty_print(mdp_message, i, n)
     else:
         for mdp_message in mdp_parser.parse(data, offset=12):
             message_fields = ''

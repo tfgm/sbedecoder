@@ -9,7 +9,7 @@ from nose.tools import assert_equals
 from nose.tools import assert_is_instance
 from nose.tools import assert_is_none
 
-from orderbook import SecDef
+from mdp.orderbook import SecDef
 
 
 class TestSecDef:

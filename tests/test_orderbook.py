@@ -11,7 +11,7 @@ from nose.tools import assert_is_none
 from nose.tools import assert_is_not_none
 from nose.tools import assert_true
 
-from orderbook import OrderBook
+from mdp.orderbook import OrderBook
 
 
 class TestOrderBook:
