@@ -63,7 +63,7 @@ MDP 3.0 (MDP3) messages from a pcap file.  For help with using mdp_decoder.py:
 An SBE template for CME Group MDP 3.0 market data can be found at 
 ftp://ftp.cmegroup.com/SBEFix/Production/Templates/templates_FixBinary.xml
 
-Example, output:
+Example output:
 
     :packet - timestamp: 2015-06-25 09:45:01.924492 sequence_number: 93696727 sending_time: 1435243501924423666 
     ::MDIncrementalRefreshVolume -  transact_time: 1435243501923350056 match_event_indicator: LastVolumeMsg (2)
@@ -73,6 +73,40 @@ Example, output:
     :::no_md_entries - num_groups: 2
     ::::md_entry_px: 18792.0 ({'mantissa': 187920000000, 'exponent': -7}) md_entry_size: 1 security_id: 559884 rpt_seq: 2666380 number_of_orders: 1 md_price_level: 1 md_update_action: Delete (2) md_entry_type: Bid (0) 
     ::::md_entry_px: 18746.0 ({'mantissa': 187460000000, 'exponent': -7}) md_entry_size: 6 security_id: 559884 rpt_seq: 2666381 number_of_orders: 1 md_price_level: 10 md_update_action: New (0) md_entry_type: Bid (0) 
+
+Example output (with `--pretty`):
+
+
+```
+packet - timestamp: 2016-03-10 15:33:21.301819 sequence_number: 76643046 sending_time: 1454679022595400091
+    Message 1 of 2: TID 32 (MDIncrementalRefreshBook) v6
+        TransactTime (60): 02/05/2016 07:30:22.595256135 (1454679022595256135)
+        MatchEventIndicator (5799): LastQuoteMsg
+        NoMDEntries (268): 1
+        Entry 1
+            MDEntryPx (270): 98890000000 (9889.0)
+            MDEntrySize (271): 296
+            SecurityID (48): 807004
+            RptSeq (83): 14273794
+            NumberOfOrders (346): 16
+            MDPriceLevel (1023): 2
+            MDUpdateAction (279): Change
+            MDEntryType (269): Offer
+    Message 2 of 2: TID 32 (MDIncrementalRefreshBook) v6
+        TransactTime (60): 02/05/2016 07:30:22.595256135 (1454679022595256135)
+        MatchEventIndicator (5799): LastImpliedMsg, EndOfEvent
+        NoMDEntries (268): 8
+        Entry 1
+            MDEntryPx (270): 475000000 (47.5)
+            MDEntrySize (271): 296
+            SecurityID (48): 817777
+            RptSeq (83): 1573080
+            NumberOfOrders (346): Null
+            MDPriceLevel (1023): 2
+            MDUpdateAction (279): Change
+            MDEntryType (269): ImpliedBid
+        Entry 2...
+```
 
 mdp_book_builder.py
 -------------------
