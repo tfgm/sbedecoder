@@ -16,15 +16,19 @@ import gzip
 import dpkt
 
 
-def handle_repeating_groups(group_container, indent, skip_fields):
+def handle_repeating_groups(group_container, msg_version, indent, skip_fields):
     for group in group_container.groups:
+        if group.since_version > msg_version:
+            continue
         print(':::{} - num_groups: {}'.format(group.name, group.num_groups))
         for group_field in group.repeating_groups:
             group_fields = ''
             for group_field in group_field.fields:
+                if group_field.since_version > msg_version:
+                    continue
                 group_fields += str(group_field) + ' '
             print('::::{}'.format(group_fields))
-        handle_repeating_groups(group, indent + ':', skip_fields=skip_fields)
+        handle_repeating_groups(group, msg_version, indent + ':', skip_fields=skip_fields)
 
 
 def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data):
@@ -39,10 +43,12 @@ def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data):
     for mdp_message in mdp_parser.parse(data, offset=12):
         message_fields = ''
         for field in mdp_message.fields:
+            if field.since_version > mdp_message.version.value:  # field is later version than msg
+                continue
             if field.name not in skip_fields:
                 message_fields += ' ' + str(field)
         print('::{} - {}'.format(mdp_message, message_fields))
-        handle_repeating_groups(mdp_message, indent='::::', skip_fields=skip_fields)
+        handle_repeating_groups(mdp_message, mdp_message.version.value, indent='::::', skip_fields=skip_fields)
 
 
 def process_file(args, pcap_filename, print_data):
