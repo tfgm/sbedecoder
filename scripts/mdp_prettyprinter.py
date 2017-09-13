@@ -1,6 +1,4 @@
 
-import binascii
-import struct
 from datetime import datetime
 
 def mdp3time(t):
