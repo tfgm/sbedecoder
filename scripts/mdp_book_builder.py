@@ -11,7 +11,7 @@ import gzip
 import dpkt
 import binascii
 
-from mdp.orderbook import SecDef
+from mdp.secdef import SecDef
 from mdp.orderbook import PacketProcessor
 from mdp.orderbook import ConsolePrinter
 
