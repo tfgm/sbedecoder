@@ -7,9 +7,17 @@ def mdp3time(t):
     s += '.' + str(int(t % 1000000000)).zfill(9)
     return s
 
-def adjustField(field):
+def adjustField(field, secdef):
     if field.semantic_type == 'UTCTimestamp':
         return '{} ({})'.format(mdp3time(field.value), field.value)
+
+    # Add the symbol from the secdef file if we can
+    if secdef and field.id == '48':
+        security_id = field.value
+        symbol_info = secdef.lookup_security_id(security_id)
+        if symbol_info:
+            symbol = symbol_info[0]
+            return '{} [{}]'.format(security_id, symbol)
 
     # Use enum name rather than description, to match MC
     if hasattr(field, 'enumerant'):
@@ -20,19 +28,19 @@ def adjustField(field):
     # Make prices match MC (no decimal)
     if field.semantic_type == 'Price':
         if value is not None:
-            value = '{} ({})'.format(str(int(float(value) * 10000000)), value)
+            value = '{} ({})'.format(int(float(value) * 10000000), value)
 
     value = '<Empty>' if value == '' else value
     value = 'Null' if value is None else value
     return value
 
 
-def pretty_print(msg, i, n):
+def pretty_print(msg, i, n, secdef):
     print '    Message %d of %d: TID %d (%s) v%d' % (i + 1, n, msg.template_id.value, msg.name, msg.version.value)
     for field in [x for x in msg.fields if x.original_name[0].isupper()]:
         if field.since_version > msg.version.value: # field is later version than msg
             continue
-        value = adjustField(field)
+        value = adjustField(field, secdef)
         if field.id:
             print '        %s (%s): %s' % (field.original_name, field.id, value)
         else:
@@ -47,6 +55,6 @@ def pretty_print(msg, i, n):
             for field in group_instance.fields:
                 if field.since_version > msg.version.value:
                     continue
-                value = adjustField(field)
+                value = adjustField(field, secdef)
                 print '            %s (%s): %s' % (field.original_name, field.id, value)
 

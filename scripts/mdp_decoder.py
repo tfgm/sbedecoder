@@ -13,11 +13,12 @@ from sbedecoder import SBESchema
 from sbedecoder import SBEMessageFactory
 from sbedecoder import SBEParser
 import mdp.prettyprinter
+import mdp.secdef
 import gzip
 import dpkt
 
 
-def handle_repeating_groups(group_container, msg_version, indent, skip_fields):
+def handle_repeating_groups(group_container, msg_version, indent, skip_fields, secdef):
     for group in group_container.groups:
         if group.since_version > msg_version:
             continue
@@ -27,12 +28,19 @@ def handle_repeating_groups(group_container, msg_version, indent, skip_fields):
             for group_field in group_field.fields:
                 if group_field.since_version > msg_version:
                     continue
+                if secdef and group_field.id == '48':
+                    security_id = group_field.value
+                    symbol_info = secdef.lookup_security_id(security_id)
+                    if symbol_info:
+                        symbol = symbol_info[0]
+                        group_fields += 'security_id: {} [{}]'.format(security_id, symbol) + ' '
+                        continue
                 group_fields += str(group_field) + ' '
             print('::::{}'.format(group_fields))
-        handle_repeating_groups(group, msg_version, indent + ':', skip_fields=skip_fields)
+        handle_repeating_groups(group, msg_version, indent + ':', skip_fields=skip_fields, secdef=secdef)
 
 
-def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data, pretty):
+def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data, pretty, secdef):
     if print_data:
         print('data: {}'.format(binascii.b2a_hex(data)))
 
@@ -52,7 +60,7 @@ def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data, pretty):
         n = len(list(mdp_parser.parse(data, offset=12)))  # pass 1 to count the msgs in iterable
 
         for i, mdp_message in enumerate(mdp_parser.parse(data, offset=12)):  # pass 2 to actually print
-            mdp.prettyprinter.pretty_print(mdp_message, i, n)
+            mdp.prettyprinter.pretty_print(mdp_message, i, n, secdef)
     else:
         for mdp_message in mdp_parser.parse(data, offset=12):
             message_fields = ''
@@ -62,7 +70,7 @@ def parse_mdp3_packet(mdp_parser, ts, data, skip_fields, print_data, pretty):
                 if field.name not in skip_fields:
                     message_fields += ' ' + str(field)
             print('::{} - {}'.format(mdp_message, message_fields))
-            handle_repeating_groups(mdp_message, mdp_message.version.value, indent='::::', skip_fields=skip_fields)
+            handle_repeating_groups(mdp_message, mdp_message.version.value, indent='::::', skip_fields=skip_fields, secdef=secdef)
 
 
 def process_file(args, pcap_filename, print_data):
@@ -71,6 +79,11 @@ def process_file(args, pcap_filename, print_data):
     mdp_schema.parse(args.schema)
     msg_factory = SBEMessageFactory(mdp_schema)
     mdp_parser = SBEParser(msg_factory)
+
+    secdef = None
+    if args.secdef:
+        secdef = mdp.secdef.SecDef()
+        secdef.load(args.secdef)
 
     skip_fields = set(args.skip_fields.split(','))
 
@@ -85,7 +98,7 @@ def process_file(args, pcap_filename, print_data):
                 if ip.p == dpkt.ip.IP_PROTO_UDP:
                     udp = ip.data
                     try:
-                        parse_mdp3_packet(mdp_parser, ts, udp.data, skip_fields, print_data, args.pretty)
+                        parse_mdp3_packet(mdp_parser, ts, udp.data, skip_fields, print_data, args.pretty, secdef)
                     except Exception as e:
                         print('Error parsing packet #{} - {}'.format(packet_number, e))
 
@@ -113,6 +126,9 @@ def process_command_line():
 
     parser.add_argument("--pretty", action='store_true',
         help="Print the message with a pretty format")
+
+    parser.add_argument('--secdef',
+        help='Name of the security definition file for augmenting logs with symbols')
 
     args = parser.parse_args()
 
