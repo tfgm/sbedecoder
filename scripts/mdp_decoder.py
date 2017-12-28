@@ -14,6 +14,7 @@ import mdp.secdef
 import mdp.decode
 import gzip
 import dpkt
+from datetime import datetime
 
 
 def process_file(pcap_filename, mdp_parser, secdef, pretty_print, print_data, skip_fields):
@@ -28,7 +29,8 @@ def process_file(pcap_filename, mdp_parser, secdef, pretty_print, print_data, sk
                 if ip.p == dpkt.ip.IP_PROTO_UDP:
                     udp = ip.data
                     try:
-                        mdp.decode.decode_packet(mdp_parser, ts, udp.data, skip_fields, print_data, pretty_print, secdef)
+                        timestamp = datetime.fromtimestamp(ts)
+                        mdp.decode.decode_packet(mdp_parser, timestamp, udp.data, skip_fields, print_data, pretty_print, secdef)
                     except Exception as e:
                         print('Error parsing packet #{} - {}'.format(packet_number, e))
 
