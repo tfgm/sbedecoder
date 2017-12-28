@@ -25,11 +25,10 @@ def handle_repeating_groups(group_container, msg_version, indent, skip_fields, s
         handle_repeating_groups(group, msg_version, indent + ':', skip_fields=skip_fields, secdef=secdef)
 
 
-def decode_packet(mdp_parser, ts, data, skip_fields, print_data, pretty, secdef):
+def decode_packet(mdp_parser, timestamp, data, skip_fields, print_data, pretty, secdef):
     if print_data:
         print('data: {}'.format(binascii.b2a_hex(data)))
 
-    timestamp = datetime.fromtimestamp(ts)
     # parse the packet header: http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP+3.0+-+Binary+Packet+Header
     sequence_number = unpack_from("<i", data, offset=0)[0]
     sending_time = unpack_from("<Q", data, offset=4)[0]
