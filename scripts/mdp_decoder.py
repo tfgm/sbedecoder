@@ -7,7 +7,7 @@ Parse a pcap file containing CME MDP3 market data based on a SBE xml schema file
 import sys
 import os.path
 from sbedecoder import SBESchema
-from sbedecoder import SBEMessageFactory
+from sbedecoder import MDPMessageFactory
 from sbedecoder import SBEParser
 import mdp.prettyprinter
 import mdp.secdef
@@ -77,7 +77,7 @@ def main(argv=None):
     # Read in the schema xml as a dictionary and construct the various schema objects
     mdp_schema = SBESchema()
     mdp_schema.parse(args.schema)
-    msg_factory = SBEMessageFactory(mdp_schema)
+    msg_factory = MDPMessageFactory(mdp_schema)
     mdp_parser = SBEParser(msg_factory)
 
     secdef = None

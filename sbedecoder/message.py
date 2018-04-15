@@ -18,7 +18,7 @@ class SBEMessageField(object):
         self.msg_buffer = msg_buffer
         self.msg_offset = base_offset
         self.relative_offset = relative_offset
-
+        
     @property
     def value(self):
         return None
@@ -131,7 +131,7 @@ class EnumMessageField(SBEMessageField):
         self.field_offset = field_offset
         self.enum_values = enum_values
         self.field_length = field_length
-        self.text_to_enum_description = dict((x['text'], x['description']) for x in enum_values)
+        self.text_to_enum_description = dict((x['text'], x.get('description', '')) for x in enum_values)
         self.text_to_enumerant = dict((x['text'], x['name']) for x in enum_values) # shorter repr of value
         self.semantic_type = semantic_type
         self.since_version = since_version
@@ -153,7 +153,6 @@ class EnumMessageField(SBEMessageField):
         _raw_value = unpack_from(self.unpack_fmt, self.msg_buffer,
                                  self.msg_offset + self.relative_offset + self.field_offset)[0]
         return _raw_value
-
 
 
 class CompositeMessageField(SBEMessageField):
@@ -192,7 +191,7 @@ class CompositeMessageField(SBEMessageField):
             mantissa = _raw_value.get('mantissa', None)
             exponent = _raw_value.get('exponent', None)
             if mantissa is None or exponent is None:
-                return None 
+                return None
             return float(mantissa) * math.pow(10, exponent)
 
         return self.raw_value
@@ -265,12 +264,10 @@ class SBERepeatingGroupContainer(object):
         self.msg_buffer = msg_buffer
         self.msg_offset = msg_offset
         self.group_start_offset = group_start_offset
-
         self.block_length_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         self.num_in_group_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         block_length = self.block_length_field.value
         num_instances = self.num_in_group_field.value
-
         self._repeating_groups = []
         self.group_offset = group_start_offset + self.dimension_size
 
@@ -279,6 +276,7 @@ class SBERepeatingGroupContainer(object):
         nested_groups_length = 0
         for i in range(num_instances):
             repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.original_name, self.fields)
+            repeated_group.wrap()
             self._repeating_groups.append(repeated_group)
             repeated_group_offset += block_length
             # now account for any nested groups
@@ -289,6 +287,7 @@ class SBERepeatingGroupContainer(object):
                     repeated_group.add_subgroup(nested_repeating_group)
 
         size = self.dimension_size + (num_instances * block_length) + nested_groups_length
+
         return size
 
     @property
@@ -305,7 +304,6 @@ class SBERepeatingGroupContainer(object):
         group = self._repeating_groups[index]
         group.wrap()
         return group
-
 
 
 class SBEMessage(object):
@@ -341,10 +339,21 @@ class SBEMessageFactory(object):
     def __init__(self, schema):
         self.schema = schema
 
+    #This should return a tuple of (message, message_size)
+    def build(self, msg_buffer, offset):
+        raise NotImplementedError()
+
+
+class MDPMessageFactory(SBEMessageFactory):
+    def __init__(self, schema):
+        super(MDPMessageFactory, self).__init__(schema)
+
     def build(self, msg_buffer, offset):
         # Peek at the template id to figure out what class to build
+        #this looks past the starting 2byte message_size header that is CME specific
+        #and the 2byte BlockHeader that starts all SBE Messages
         template_id = unpack_from('<H', msg_buffer, offset+4)[0]
         message_type = self.schema.get_message_type(template_id)
         message = message_type()
         message.wrap(msg_buffer, offset)
-        return message
+        return message, message.message_size.value
