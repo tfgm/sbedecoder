@@ -18,7 +18,7 @@ class SBEMessageField(object):
         self.msg_buffer = msg_buffer
         self.msg_offset = base_offset
         self.relative_offset = relative_offset
-        
+
     @property
     def value(self):
         return None
@@ -232,6 +232,7 @@ class SBERepeatingGroup:
             group.wrap()
             yield group
 
+
 class SBERepeatingGroupContainer(object):
     def __init__(self, name=None, original_name=None, id=None, block_length_field=None,
                  num_in_group_field=None, dimension_size=None, fields=None, groups=None,
@@ -258,7 +259,7 @@ class SBERepeatingGroupContainer(object):
         self.since_version = since_version
 
         self.dimension_size = dimension_size
-        self._repeating_groups = None
+        self._repeating_groups = []
 
     def wrap(self, msg_buffer, msg_offset, group_start_offset):
         self.msg_buffer = msg_buffer
@@ -268,6 +269,7 @@ class SBERepeatingGroupContainer(object):
         self.num_in_group_field.wrap(msg_buffer, msg_offset, relative_offset=group_start_offset)
         block_length = self.block_length_field.value
         num_instances = self.num_in_group_field.value
+
         self._repeating_groups = []
         self.group_offset = group_start_offset + self.dimension_size
 
@@ -276,7 +278,6 @@ class SBERepeatingGroupContainer(object):
         nested_groups_length = 0
         for i in range(num_instances):
             repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.original_name, self.fields)
-            repeated_group.wrap()
             self._repeating_groups.append(repeated_group)
             repeated_group_offset += block_length
             # now account for any nested groups
@@ -287,7 +288,6 @@ class SBERepeatingGroupContainer(object):
                     repeated_group.add_subgroup(nested_repeating_group)
 
         size = self.dimension_size + (num_instances * block_length) + nested_groups_length
-
         return size
 
     @property
