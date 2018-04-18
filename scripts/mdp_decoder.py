@@ -75,7 +75,7 @@ def main(argv=None):
     args = process_command_line()
 
     # Read in the schema xml as a dictionary and construct the various schema objects
-    mdp_schema = SBESchema()
+    mdp_schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
     mdp_schema.parse(args.schema)
     msg_factory = MDPMessageFactory(mdp_schema)
     mdp_parser = SBEParser(msg_factory)

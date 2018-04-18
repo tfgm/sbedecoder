@@ -21,7 +21,7 @@ from sbedecoder import SBEParser
 
 
 def process_file(args, pcap_filename, security_id_filter=None, print_data=False):
-    mdp_schema = SBESchema()
+    mdp_schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
     # Read in the schema xml as a dictionary and construct the various schema objects
     try:
         from sbedecoder.generated import __messages__ as generated_messages

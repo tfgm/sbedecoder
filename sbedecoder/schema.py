@@ -11,9 +11,10 @@ def convert_to_underscore(name):
 
 
 class SBESchema(object):
-    def __init__(self):
+    def __init__(self, include_message_size_header=False, use_description_as_message_name=False):
         self.messages = []
-        self.include_message_size_header = True
+        self.include_message_size_header = include_message_size_header
+        self.use_description_as_message_name = use_description_as_message_name
         self.initial_types = {
            "char": {"children": [], "description": "char", "name": "char", "primitive_type": "char", "type": "type"},
            "int": {"children": [], "description": "int", "name": "int", "primitive_type": "int32", "type": "type"},
@@ -312,7 +313,8 @@ class SBESchema(object):
         # All messages start with a message size field
         message_id = int(message['id'])
         schema_block_length = self._determine_block_length(message)
-        message_type = type(message['name'], (SBEMessage,), {'message_id': message_id,
+        type_name = message['description'] if self.use_description_as_message_name else message['name']
+        message_type = type(type_name, (SBEMessage,), {'message_id': message_id,
                             'schema_block_length': schema_block_length})
         self.message_map[message_id] = message_type
         setattr(message_type, 'fields', [])
@@ -413,8 +415,7 @@ class SBESchema(object):
         self._add_fields(field_offset, message, message_type, endian, add_header_size=True)
         self._add_groups(message, message_type, endian)
 
-    def parse(self, xml_file, message_tag="message", types_tag="types", endian='<', include_message_size_header=True):
-        self.include_message_size_header = include_message_size_header
+    def parse(self, xml_file, message_tag="message", types_tag="types", endian='<'):
         self.type_map = self._parse_types(xml_file, types_tag=types_tag)
         self.messages = self._parse_messages(xml_file, message_tag=message_tag)
 
