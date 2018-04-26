@@ -312,6 +312,18 @@ class SBEMessage(object):
         self.msg_buffer = None
         self.msg_offset = None
 
+    @staticmethod
+    def parse_message(schema, msg_buffer, offset=0):
+        """ Return a message by parsing a msg_buffer with the specified schema """
+        template_id_offset = 2  # the 2 byte BlockHeader that starts all SBE Messages
+        if schema.include_message_size_header:
+            template_id_offset = 4  # Include a two byte message header (i.e for CME MDP)
+        template_id = unpack_from('<H', msg_buffer, offset + template_id_offset)[0]
+        message_type = schema.get_message_type(template_id)
+        message = message_type()
+        message.wrap(msg_buffer, offset)
+        return message
+
     def wrap(self, msg_buffer, msg_offset):
         # Wrap the fields for decoding
         self.msg_buffer = msg_buffer
@@ -339,7 +351,7 @@ class SBEMessageFactory(object):
     def __init__(self, schema):
         self.schema = schema
 
-    #This should return a tuple of (message, message_size)
+    # This should return a tuple of (message, message_size)
     def build(self, msg_buffer, offset):
         raise NotImplementedError()
 
@@ -350,8 +362,8 @@ class MDPMessageFactory(SBEMessageFactory):
 
     def build(self, msg_buffer, offset):
         # Peek at the template id to figure out what class to build
-        #this looks past the starting 2byte message_size header that is CME specific
-        #and the 2byte BlockHeader that starts all SBE Messages
+        # this looks past the starting 2 byte message_size header that is CME specific
+        # and the 2 byte BlockHeader that starts all SBE Messages
         template_id = unpack_from('<H', msg_buffer, offset+4)[0]
         message_type = self.schema.get_message_type(template_id)
         message = message_type()

@@ -427,3 +427,8 @@ class SBESchema(object):
     def load(self, messages):
         self.messages = messages
         self.message_map = dict((m.message_id, m) for m in messages)
+
+
+class MDPSchema(SBESchema):
+    def __init__(self):
+        super(MDPSchema, self).__init__(include_message_size_header=True, use_description_as_message_name=True)

@@ -6,6 +6,7 @@ import tempfile
 import os
 import binascii
 from sbedecoder import SBESchema
+from sbedecoder import SBEMessage
 from sbedecoder import MDPMessageFactory
 from sbedecoder import SBEParser
 from nose.tools import assert_equals
@@ -30,6 +31,7 @@ class TestSBEParserLibrary:
 
     def setup(self):
         self.recorded_messages = []
+
 
     def test_security_status_reset_statistics(self):
         schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
@@ -300,6 +302,36 @@ class TestSBEParserLibrary:
                     assert_equals(2, order_id_entry.last_qty.value)
 
         assert_equals(1, msg_count)
+
+
+    def test_sbemessage_parse_message(self):
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
+        try:
+            from sbedecoder.generated import __messages__ as generated_messages
+            schema.load(generated_messages)
+        except:
+            schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
+
+        msg_buffer = binascii.a2b_hex('5603a9009c16d545349ad91428001e001e000100080003259845349ad914455300000000000000000000ffffff7fed4380150004')
+
+        offset = 12
+
+        recorded_message = SBEMessage.parse_message(schema, msg_buffer, offset)
+
+        # Validate that we parsed a security status message
+        assert_equals(30, recorded_message.template_id.value)
+        assert_equals('SecurityStatus', recorded_message.name)
+        assert_equals(17389, recorded_message.trade_date.value)
+        assert_equals(1502401500001346819, recorded_message.transact_time.value)
+        assert_equals('Reset Statistics', recorded_message.security_trading_event.value)
+        assert_equals('ResetStatistics', recorded_message.security_trading_event.enumerant)
+        assert_equals('Pre Open', recorded_message.security_trading_status.value)
+        assert_equals('PreOpen', recorded_message.security_trading_status.enumerant)
+        assert_equals('ES', recorded_message.security_group.value)
+        assert_equals('', recorded_message.asset.value)
+        assert_equals('Group Schedule', recorded_message.halt_reason.value)
+        assert_equals('GroupSchedule', recorded_message.halt_reason.enumerant)
+        assert_equals(None, recorded_message.security_id.value)
 
 
 if __name__ == "__main__":
