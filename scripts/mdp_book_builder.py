@@ -16,7 +16,7 @@ from mdp.orderbook import PacketProcessor
 from mdp.orderbook import ConsolePrinter
 
 from sbedecoder import SBESchema
-from sbedecoder import SBEMessageFactory
+from sbedecoder import MDPMessageFactory
 from sbedecoder import SBEParser
 
 
@@ -29,7 +29,7 @@ def process_file(args, pcap_filename, security_id_filter=None, print_data=False)
     except:
         mdp_schema.parse(args.schema)
 
-    msg_factory = SBEMessageFactory(mdp_schema)
+    msg_factory = MDPMessageFactory(mdp_schema)
     mdp_parser = SBEParser(msg_factory)
 
     secdef = SecDef()
