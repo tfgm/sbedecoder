@@ -13,6 +13,11 @@ creating an instance of SBESchema() and calling it's parse() method with a file 
     schema = SBESchema()
     schema.parse('path/to/schema.xml')
 
+The SBESchema can be initialized with `include_message_size_header=True` if all messages require
+an extra 2 byte (unit16) message_size_header field. If you also need to use message descriptions
+as the name of the message for backward compatibility with older version of the sbedecoder library
+please initialize your SBESchema with `use_description_as_message_name=True`.
+
 A message parser based on this schema is created by first creating an instance of a SBEMessageFactory()
 and then creating an instance of SBEParser() using the SBEMessageFactory():
 

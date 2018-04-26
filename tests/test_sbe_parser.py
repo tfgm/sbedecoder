@@ -6,7 +6,7 @@ import tempfile
 import os
 import binascii
 from sbedecoder import SBESchema
-from sbedecoder import SBEMessageFactory
+from sbedecoder import MDPMessageFactory
 from sbedecoder import SBEParser
 from nose.tools import assert_equals
 
@@ -32,14 +32,14 @@ class TestSBEParserLibrary:
         self.recorded_messages = []
 
     def test_security_status_reset_statistics(self):
-        schema = SBESchema()
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
         try:
             from sbedecoder.generated import __messages__ as generated_messages
             schema.load(generated_messages)
         except:
             schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
 
-        msg_factory = SBEMessageFactory(schema)
+        msg_factory = MDPMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
         msg_buffer = binascii.a2b_hex('5603a9009c16d545349ad91428001e001e000100080003259845349ad914455300000000000000000000ffffff7fed4380150004')
@@ -67,9 +67,9 @@ class TestSBEParserLibrary:
         assert_equals(None, recorded_message.security_id.value)
 
     def test_security_status(self):
-        schema = SBESchema()
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
         schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
-        msg_factory = SBEMessageFactory(schema)
+        msg_factory = MDPMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
         msg_buffer = binascii.a2b_hex('1409a900bbe7b5d5fe9ad91428001e001e000100080019989cd5fe9ad914455300000000000000000000ffffff7fed4380150001')
@@ -95,9 +95,9 @@ class TestSBEParserLibrary:
 
     def test_incremental_refresh_verify_groups(self):
 
-        schema = SBESchema()
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
         schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
-        msg_factory = SBEMessageFactory(schema)
+        msg_factory = MDPMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
         msg_buffer = binascii.a2b_hex(
@@ -162,9 +162,9 @@ class TestSBEParserLibrary:
 
 
     def test_incremental_refresh_verify_group_attributes(self):
-        schema = SBESchema()
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
         schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
-        msg_factory = SBEMessageFactory(schema)
+        msg_factory = MDPMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
         msg_buffer = binascii.a2b_hex(
@@ -223,9 +223,9 @@ class TestSBEParserLibrary:
 
     def test_incremental_refresh_multiple_messages(self):
 
-        schema = SBESchema()
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
         schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
-        msg_factory = SBEMessageFactory(schema)
+        msg_factory = MDPMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
         msg_buffer = binascii.a2b_hex('c90fa9008a15428b069bd91458000b00200001000800e7c43d8b069bd91484000020000180b2654d360200008e0000000a610000f62fac003000000007013000000000001800000000000001e44c980a960000002b13144401000000010000000101000058000b002000010008006f203f8b069bd9148400002000018017336b3602000004000000805d0000402d140002000000020131000000000018000000000000016153980a960000002c131444010000000200000001010000')
@@ -256,9 +256,9 @@ class TestSBEParserLibrary:
 
     def test_incremental_refresh_trade_summary(self):
 
-        schema = SBESchema()
+        schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
         schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
-        msg_factory = SBEMessageFactory(schema)
+        msg_factory = MDPMessageFactory(schema)
         parser = SBEParser(msg_factory)
 
         msg_buffer = binascii.a2b_hex('2f0aa9007decc6d2059bd91460000b002a000100080085b89fd2059bd91401000020000100f981d336020000020000000a610000fe2aac00020000000100ffffffff000010000000000000023051980a960000000200000000000000ad50980a960000000200000000000000')

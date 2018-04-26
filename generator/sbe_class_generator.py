@@ -45,6 +45,12 @@ def process_command_line():
     arg_parser.add_argument("--template", default='sbe_message.tmpl',
         help="Name of template file to use for generating the class output (default: %(default)s)")
 
+    arg_parser.add_argument("--include-message-size-header", action='store_true',
+        help="pass include_message_size_header=True to SBESchema", default=False)
+
+    arg_parser.add_argument("--use-description-as-message-name", action='store_true',
+        help="pass use_description_as_message_name=True to SBESchema", default=False)
+
     args = arg_parser.parse_args()
 
     # check number of arguments, verify values, etc.:
@@ -89,7 +95,9 @@ def main(argv=None):
     output_file = cmd_line_args.output
     template_file_path = cmd_line_args.template
 
-    mdp_schema = SBESchema()
+    use_msg_size_header = cmd_line_args.include_message_size_header
+    use_desc_as_name = cmd_line_args.use_description_as_message_name
+    mdp_schema = SBESchema(include_message_size_header=use_msg_size_header, use_description_as_message_name=use_desc_as_name)
     mdp_schema.parse(schema_file)
 
     # Translate the message classes into a description that can be converted into a field description
