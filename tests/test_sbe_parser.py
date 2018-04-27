@@ -17,9 +17,6 @@ class TestSBEParserLibrary:
     SCHEMA_URL = 'ftp://ftp.cmegroup.com/SBEFix/Production/Templates/templates_FixBinary.xml'
     LOCAL_TEMPLATE_FILENAME = None
 
-    def __init__(self):
-        self.recorded_messages = None
-
     @classmethod
     def setup_class(cls):
         TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME = tempfile.NamedTemporaryFile().name

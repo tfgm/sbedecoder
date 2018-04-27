@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/tfgm/sbedecoder.svg?branch=master)](https://travis-ci.org/tfgm/sbedecoder)
+
 Python based Simple Binary Encoding (SBE) decoder
 =================================================
 
