@@ -1,0 +1,7 @@
+dpkt
+lxml
+
+# the following are for running tests
+nose
+mako
+autopep8

@@ -72,6 +72,12 @@ For more information on SBE, see: http://www.fixtradingcommunity.org/pg/structur
 Install
 -------
 
+The sbedecoder project is available on PyPI:
+
+    pip install sbedecoder
+    
+If you are installing from source:
+
     python setup.py install
 
 **Note**: The SBE decoder has only been tested with python 2.7.  On Windows, we typically use the 
