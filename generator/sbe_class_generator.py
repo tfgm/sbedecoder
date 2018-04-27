@@ -88,6 +88,44 @@ def build_field_description(field):
         field_description['kwargs']['parts'] = converted_parts
     return field_description
 
+def handle_repeating_group(group_container):
+    message_groups = []
+    for repeating_group in group_container.groups:
+        group_description = {'name': repeating_group.name,
+                            'original_name': repeating_group.original_name,
+                            'id': repeating_group.id,
+                            'type': type(repeating_group).__name__,
+                            'dimension_size': repeating_group.dimension_size,
+                            'since_version': repeating_group.since_version}
+
+        block_length_field = repeating_group.block_length_field
+        group_description['block_length_field'] = {'name': block_length_field.name,
+                                                  'original_name': block_length_field.original_name,
+                                                  'type': type(block_length_field).__name__,
+                                                  'kwargs': block_length_field.__dict__}
+
+        num_in_group_field = repeating_group.num_in_group_field
+        group_description['num_in_group_field'] = {'name': num_in_group_field.name,
+                                                  'original_name': num_in_group_field.original_name,
+                                                  'type': type(num_in_group_field).__name__,
+                                                  'kwargs': num_in_group_field.__dict__}
+
+        group_fields = []
+        for field in repeating_group.fields:
+            field_description = build_field_description(field)
+            group_fields.append(field_description)
+        group_description['fields'] = group_fields
+        group_description['groups'] = handle_repeating_group(repeating_group)
+
+        #for subgroup in repeating_group.groups:
+        #    print repeating_group.name, subgroup.name
+        #    pprint(vars(subgroup))
+        #    pprint(group_description['groups'])
+        #    exit(0)
+        message_groups.append(group_description)
+
+    return message_groups
+
 
 def main(argv=None):
     cmd_line_args = process_command_line()
@@ -123,32 +161,7 @@ def main(argv=None):
             message_fields.append(field_description)
 
         # Update the groups
-        for repeating_group in message_class.groups:
-            group_description = {'name': repeating_group.name,
-                                'original_name': repeating_group.original_name,
-                                'id': repeating_group.id,
-                                'type': type(repeating_group).__name__,
-                                'dimension_size': repeating_group.dimension_size,
-                                'since_version': repeating_group.since_version}
-
-            block_length_field = repeating_group.block_length_field
-            group_description['block_length_field'] = {'name': block_length_field.name,
-                                                      'original_name': block_length_field.original_name,
-                                                      'type': type(block_length_field).__name__,
-                                                      'kwargs': block_length_field.__dict__}
-
-            num_in_group_field = repeating_group.num_in_group_field
-            group_description['num_in_group_field'] = {'name': num_in_group_field.name,
-                                                      'original_name': num_in_group_field.original_name,
-                                                      'type': type(num_in_group_field).__name__,
-                                                      'kwargs': num_in_group_field.__dict__}
-
-            group_fields = []
-            for field in repeating_group.fields:
-                field_description = build_field_description(field)
-                group_fields.append(field_description)
-            group_description['fields'] = group_fields
-            message_groups.append(group_description)
+        message_groups.extend(handle_repeating_group(message_class))
 
         message_descriptions.append(message_description)
 
