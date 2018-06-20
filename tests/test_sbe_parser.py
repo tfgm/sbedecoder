@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import nose
-import urllib
+from six.moves import urllib
 import tempfile
 import os
 import binascii
@@ -20,7 +20,7 @@ class TestSBEParserLibrary:
     @classmethod
     def setup_class(cls):
         TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME = tempfile.NamedTemporaryFile().name
-        urllib.urlretrieve(TestSBEParserLibrary.SCHEMA_URL, TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
+        urllib.request.urlretrieve(TestSBEParserLibrary.SCHEMA_URL, TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
 
     @classmethod
     def teardown_class(cls):
@@ -307,6 +307,7 @@ class TestSBEParserLibrary:
             from sbedecoder.generated import __messages__ as generated_messages
             schema.load(generated_messages)
         except:
+            print('Loading local.')
             schema.parse(TestSBEParserLibrary.LOCAL_TEMPLATE_FILENAME)
 
         msg_buffer = binascii.a2b_hex('5603a9009c16d545349ad91428001e001e000100080003259845349ad914455300000000000000000000ffffff7fed4380150004')
