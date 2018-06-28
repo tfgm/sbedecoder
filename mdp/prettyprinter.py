@@ -36,25 +36,25 @@ def adjustField(field, secdef):
 
 
 def pretty_print(msg, i, n, secdef):
-    print '    Message %d of %d: TID %d (%s) v%d' % (i + 1, n, msg.template_id.value, msg.name, msg.version.value)
+    print('    Message %d of %d: TID %d (%s) v%d' % (i + 1, n, msg.template_id.value, msg.name, msg.version.value))
     for field in [x for x in msg.fields if x.original_name[0].isupper()]:
         if field.since_version > msg.version.value: # field is later version than msg
             continue
         value = adjustField(field, secdef)
         if field.id:
-            print '        %s (%s): %s' % (field.original_name, field.id, value)
+            print('        %s (%s): %s' % (field.original_name, field.id, value))
         else:
-            print '        %s: %s' % (field.original_name, value)
+            print('        %s: %s' % (field.original_name, value))
     for group_container in msg.groups:
         if group_container.since_version > msg.version.value:
             continue
-        print '        %s (%d): %d' % (
-        group_container.original_name, group_container.id, group_container.num_groups)
+        print('        %s (%d): %d' % (
+        group_container.original_name, group_container.id, group_container.num_groups))
         for i_instance, group_instance in enumerate(group_container):
-            print '        Entry %d' % (i_instance + 1)
+            print('        Entry %d' % (i_instance + 1))
             for field in group_instance.fields:
                 if field.since_version > msg.version.value:
                     continue
                 value = adjustField(field, secdef)
-                print '            %s (%s): %s' % (field.original_name, field.id, value)
+                print('            %s (%s): %s' % (field.original_name, field.id, value))
 
