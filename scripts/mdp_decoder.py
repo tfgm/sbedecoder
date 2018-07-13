@@ -30,7 +30,8 @@ def process_file(pcap_filename, mdp_parser, secdef, pretty_print, print_data, sk
                     udp = ip.data
                     try:
                         timestamp = datetime.fromtimestamp(ts)
-                        mdp.decode.decode_packet(mdp_parser, timestamp, udp.data, skip_fields, print_data, pretty_print, secdef)
+                        mdp.decode.decode_packet(mdp_parser, timestamp, udp.data, skip_fields,
+                            print_data, pretty_print, secdef, packet_number)
                     except Exception as e:
                         print('Error parsing packet #{} - {}'.format(packet_number, e))
 
