@@ -25,7 +25,7 @@ def handle_repeating_groups(group_container, msg_version, indent, skip_fields, s
         handle_repeating_groups(group, msg_version, indent + ':', skip_fields=skip_fields, secdef=secdef)
 
 
-def decode_packet(mdp_parser, timestamp, data, skip_fields, print_data, pretty, secdef):
+def decode_packet(mdp_parser, timestamp, data, skip_fields, print_data, pretty, secdef, packet_number):
     if print_data:
         print('data: {}'.format(binascii.b2a_hex(data)))
 
@@ -33,8 +33,8 @@ def decode_packet(mdp_parser, timestamp, data, skip_fields, print_data, pretty, 
     sequence_number = unpack_from("<i", data, offset=0)[0]
     sending_time = unpack_from("<Q", data, offset=4)[0]
 
-    print(':packet - timestamp: {} sequence_number: {} sending_time: {} '.format(
-        timestamp, sequence_number, sending_time))
+    print(':packet {} - timestamp: {} sequence_number: {} sending_time: {} '.format(
+        packet_number, timestamp, sequence_number, sending_time))
 
     if pretty:
         # Two-passes on the parse so we can count the messages and print e.g. "Message 3 of 5"
