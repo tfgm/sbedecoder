@@ -1,8 +1,6 @@
 [![Build Status](https://travis-ci.org/tfgm/sbedecoder.svg?branch=master)](https://travis-ci.org/tfgm/sbedecoder)
 
 Python based Simple Binary Encoding (SBE) decoder
-
-Supports python2 and python3
 =================================================
 
 Overview
@@ -84,7 +82,7 @@ If you are installing from source:
 
     python setup.py install
 
-**Note**: The SBE decoder has only been tested with python 2.7.  On Windows, we typically use the 
+**Note**: The SBE decoder has only been tested with python 2.7 and 3.6.  On Windows, we typically use the 
 Anaconda python distribution.  Anaconda does not distribute python's test code.  If you have 
 issues with dpkt (ImportError: No module named test), you can either install the latest dpkt 
 from source (https://github.com/kbandla/dpkt) or just comment out the import (from test import 
