@@ -1,5 +1,6 @@
 dpkt
 lxml
+six
 
 # the following are for running tests
 nose

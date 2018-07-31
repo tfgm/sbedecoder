@@ -1,6 +1,5 @@
 import re
 import gzip
-import six
 
 
 class SecDef(object):

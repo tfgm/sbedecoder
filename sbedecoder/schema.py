@@ -154,10 +154,7 @@ class SBESchema(object):
 
             null_value = None
             if 'null_value' in field_type:
-                if six.PY3:
-                    null_value = int(field_type['null_value'])
-                elif six.PY2:
-                    null_value = long(field_type['null_value'])
+                null_value = int(field_type['null_value'])
 
             message_field = TypeMessageField(name=field_name, original_name=field_original_name,
                                              id=field_id, description=field_description,
@@ -257,10 +254,7 @@ class SBESchema(object):
 
                 null_value = None
                 if 'null_value' in child:
-                    if six.PY3:
-                        null_value = int(child['null_value'])
-                    elif six.PY2:
-                        null_value = long(child['null_value'])
+                    null_value = int(child['null_value'])
 
                 # If a 'mantissa' field exists, assume we are working with a floating point value
                 if child['name'] == 'mantissa':
