@@ -20,10 +20,12 @@ setup(
     url="https://github.com/tfgm/sbedecoder",
     packages=['sbedecoder', 'mdp', 'mdp.orderbook'],
     scripts=['scripts/mdp_decoder.py', 'scripts/mdp_book_builder.py'],
-    install_requires=['dpkt', 'lxml'],
+    install_requires=['dpkt', 'lxml', 'six'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6'
     ]
 )

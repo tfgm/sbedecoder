@@ -66,8 +66,8 @@ class TypeMessageField(SBEMessageField):
 
         # If this is a string type, strip any null characters
         if self.is_string_type:
-            parts = _raw_value.split('\0', 1)
-            return parts[0]
+            parts = _raw_value.split(b'\0', 1)
+            return parts[0].decode('UTF-8')
 
         return _raw_value
 
@@ -103,7 +103,7 @@ class SetMessageField(SBEMessageField):
         _raw_value = self.raw_value
         _value = ''
         _num_values = 0
-        for i in xrange(self.field_length*8):
+        for i in range(self.field_length*8):
             bit_set = 1 & (_raw_value >> i)
             if bit_set:
                 if _num_values > 0:
@@ -152,6 +152,8 @@ class EnumMessageField(SBEMessageField):
     def raw_value(self):
         _raw_value = unpack_from(self.unpack_fmt, self.msg_buffer,
                                  self.msg_offset + self.relative_offset + self.field_offset)[0]
+        if type(_raw_value) is bytes:
+            _raw_value = _raw_value.decode('UTF-8')
         return _raw_value
 
 
@@ -277,7 +279,12 @@ class SBERepeatingGroupContainer(object):
         repeated_group_offset = group_start_offset + self.dimension_size
         nested_groups_length = 0
         for i in range(num_instances):
-            repeated_group = SBERepeatingGroup(msg_buffer, msg_offset, repeated_group_offset + nested_groups_length, self.name, self.original_name, self.fields)
+            repeated_group = SBERepeatingGroup(msg_buffer,
+                                               msg_offset,
+                                               repeated_group_offset + nested_groups_length,
+                                               self.name,
+                                               self.original_name,
+                                               self.fields)
             self._repeating_groups.append(repeated_group)
             repeated_group_offset += block_length
             # now account for any nested groups
@@ -331,7 +338,7 @@ class SBEMessage(object):
 
         message_version = 0
         for field in self.fields:
-            if message_version > 0 and field.since_version > message_version:
+            if field.since_version > message_version > 0:
                 continue
             field.wrap(msg_buffer, msg_offset)
             if field.name == 'version': # as we're iterating fields, save the version, which comes early as part of header

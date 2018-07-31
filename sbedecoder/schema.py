@@ -1,4 +1,5 @@
 import re
+import six
 from lxml import etree
 from sbedecoder.message import SBEMessage, TypeMessageField, EnumMessageField, SetMessageField, CompositeMessageField, \
     SBERepeatingGroupContainer
@@ -66,7 +67,7 @@ class SBESchema(object):
 
     def _parse_types(self, xml_file, types_tag='types'):
         type_map = self.initial_types
-        with open(xml_file) as input_schema_file:
+        with open(xml_file, 'rb') as input_schema_file:
             xml_context = etree.iterparse(input_schema_file, tag=types_tag, remove_comments=True)
             for action, elem in xml_context:
                 # Now parse all the children under the types tag
@@ -78,7 +79,7 @@ class SBESchema(object):
     @staticmethod
     def _parse_messages(xml_file, message_tag='message'):
         messages = []
-        with open(xml_file) as input_schema_file:
+        with open(xml_file, 'rb') as input_schema_file:
             xml_context = etree.iterparse(input_schema_file)
             for action, elem in xml_context:
                 local_name = etree.QName(elem.tag).localname
@@ -153,7 +154,7 @@ class SBESchema(object):
 
             null_value = None
             if 'null_value' in field_type:
-                null_value = long(field_type['null_value'])
+                null_value = int(field_type['null_value'])
 
             message_field = TypeMessageField(name=field_name, original_name=field_original_name,
                                              id=field_id, description=field_description,
@@ -178,7 +179,7 @@ class SBESchema(object):
             field_length = field_type.get('length', None)
             if field_length is not None:
                 field_length = int(field_length)
-                for i in xrange(field_length):
+                for i in range(field_length):
                     unpack_fmt += primitive_type_fmt
             else:
                 # Field length is just the primitive type length
@@ -211,7 +212,7 @@ class SBESchema(object):
             field_length = field_type.get('length', None)
             if field_length is not None:
                 field_length = int(field_length)
-                for i in xrange(field_length):
+                for i in range(field_length):
                     unpack_fmt += primitive_type_fmt
             else:
                 # Field length is just the primitive type length
@@ -253,7 +254,7 @@ class SBESchema(object):
 
                 null_value = None
                 if 'null_value' in child:
-                    null_value = long(child['null_value'])
+                    null_value = int(child['null_value'])
 
                 # If a 'mantissa' field exists, assume we are working with a floating point value
                 if child['name'] == 'mantissa':

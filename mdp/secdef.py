@@ -11,6 +11,7 @@ class SecDef(object):
         depth_regexp = re.compile('1022=GBX\x01264=(\d+)')
         with gzip.open(secdef_filename, 'rb') as f:
             for line in f:
+                line = line.decode('UTF-8')
                 matches = tag_regexp.findall(line)
                 if matches:
                     tag = dict(matches)

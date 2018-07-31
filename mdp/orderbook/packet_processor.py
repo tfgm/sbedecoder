@@ -1,5 +1,5 @@
 from struct import unpack_from
-from orderbook import OrderBook
+from .orderbook import OrderBook
 
 class PacketProcessor(object):
     def __init__(self, mdp_parser, secdef, security_id_filter=None):
@@ -21,7 +21,7 @@ class PacketProcessor(object):
             # already have seen this packet
             return
 
-        if self.stream_sequence_number + 1 <> sequence_number:
+        if self.stream_sequence_number + 1 != sequence_number:
             print('warning: stream sequence gap from {} to {}'.format(self.stream_sequence_number, sequence_number))
 
         sending_time = unpack_from('<Q', mdp_packet, offset=4)[0]
