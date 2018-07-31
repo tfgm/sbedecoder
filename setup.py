@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md')) as f:
 
 setup(
     name="sbedecoder",
-    version="0.1.5",
+    version="0.1.6",
     author="TradeForecaster Global Markets, LLC",
     author_email="github@tradeforecaster.com",
     description="Simple Binary Encoding (SBE) decoder (handles CME MDP3 messages)",
