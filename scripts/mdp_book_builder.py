@@ -63,8 +63,7 @@ def process_command_line():
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description='Parse a pcap file containing CME MDP3 market data based on a SBE xml schema file.',
-        version='0.1')
+        description='Parse a pcap file containing CME MDP3 market data based on a SBE xml schema file.')
 
     parser.add_argument('pcapfile',
         help='Name of the pcap file to process')
