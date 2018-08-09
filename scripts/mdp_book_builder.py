@@ -54,7 +54,7 @@ def process_file(args, pcap_filename, security_id_filter=None, print_data=False)
                     try:
                         if print_data:
                             print('data: {}'.format(binascii.b2a_hex(data)))
-                        book_builder.handle_packet(long(ts*1000000), data)
+                        book_builder.handle_packet(int(ts*1000000), data)
                     except Exception as e:
                         print('Error decoding e:{} message:{}'.format(e, binascii.b2a_hex(data)))
 
