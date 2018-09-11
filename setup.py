@@ -19,7 +19,7 @@ setup(
     keywords="sbe mdp3 orderbook message decoder",
     url="https://github.com/tfgm/sbedecoder",
     packages=['sbedecoder', 'mdp', 'mdp.orderbook'],
-    scripts=['scripts/mdp_decoder.py', 'scripts/mdp_book_builder.py'],
+    scripts=['scripts/mdp_decoder.py', 'scripts/mdp_base64_decoder.py', 'scripts/mdp_book_builder.py'],
     install_requires=['dpkt', 'lxml', 'six'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
