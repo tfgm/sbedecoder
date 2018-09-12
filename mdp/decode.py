@@ -18,7 +18,7 @@ def handle_repeating_groups(group_container, msg_version, indent, skip_fields, s
                     symbol_info = secdef.lookup_security_id(security_id)
                     if symbol_info:
                         symbol = symbol_info[0]
-                        group_fields += 'security_id: {} [{}]'.format(security_id, symbol) + ' '
+                        group_fields += 'security_id: {} [{}] '.format(security_id, symbol)
                         continue
                 group_fields += str(group_field) + ' '
             print('::::{}'.format(group_fields))
@@ -51,8 +51,15 @@ def decode_packet(mdp_parser, timestamp, data, skip_fields, print_data, pretty, 
             for field in mdp_message.fields:
                 if field.since_version > mdp_message.version.value:  # field is later version than msg
                     continue
+                if secdef and field.id == '48':
+                    security_id = field.value
+                    symbol_info = secdef.lookup_security_id(security_id)
+                    if symbol_info:
+                        symbol = symbol_info[0]
+                        message_fields += ' security_id: {} [{}]'.format(security_id, symbol)
+                        continue
                 if field.name not in skip_fields:
                     message_fields += ' ' + str(field)
-            print('::{} - {}'.format(mdp_message, message_fields))
+            print('::{} (tid:{})- {}'.format(mdp_message, mdp_message.template_id.value, message_fields))
             handle_repeating_groups(mdp_message, mdp_message.version.value, indent='::::', skip_fields=skip_fields, secdef=secdef)
 
