@@ -19,6 +19,7 @@ schema_url = 'ftp://ftp.cmegroup.com/SBEFix/Production/Templates/templates_FixBi
 def mdp_schema():
     schema_filename = tempfile.NamedTemporaryFile().name
     urllib.request.urlretrieve(schema_url, schema_filename)
+    urllib.request.urlcleanup()  # work around a bug in urllib under python 2.7 (https://stackoverflow.com/a/44734254)
     schema = SBESchema(include_message_size_header=True, use_description_as_message_name=True)
     try:
         from sbedecoder.generated import __messages__ as generated_messages

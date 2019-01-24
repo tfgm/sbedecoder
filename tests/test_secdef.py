@@ -15,6 +15,7 @@ secdef_url = 'ftp://ftp.cmegroup.com/SBEFix/Production/secdef.dat.gz'
 def secdef():
     secdef_filename = tempfile.NamedTemporaryFile().name
     urllib.request.urlretrieve(secdef_url, secdef_filename)
+    urllib.request.urlcleanup()  # work around a bug in urllib under python 2.7 (https://stackoverflow.com/a/44734254)
     secdef = SecDef()
     secdef.load(secdef_filename)
     os.remove(secdef_filename)
