@@ -106,7 +106,7 @@ class SBESchema(object):
         definition['fields'] = fields
         definition['groups'] = groups
 
-    def _build_message_field(self, field_definition, offset, header_size=10, endian='<', add_header_size=True):
+    def _build_message_field(self, message_type, field_definition, offset, endian='<', add_header_size=True):
         field_original_name = field_definition['name']
         field_name = convert_to_underscore(field_original_name)
         field_id = field_definition['id']
@@ -124,7 +124,7 @@ class SBESchema(object):
             if field_definition.get('offset', None) is not None:
                 field_offset = int(field_definition.get('offset', None))
                 if add_header_size:
-                    field_offset += header_size
+                    field_offset += message_type.header_size
 
             primitive_type_fmt, primitive_type_size = self.primitive_type_map[field_type['primitive_type']]
 
@@ -173,7 +173,7 @@ class SBESchema(object):
             if field_definition.get('offset', None) is not None:
                 field_offset = int(field_definition.get('offset', None))
                 if add_header_size:
-                    field_offset += header_size
+                    field_offset += message_type.header_size
 
             unpack_fmt = endian
             field_length = field_type.get('length', None)
@@ -206,7 +206,7 @@ class SBESchema(object):
             if field_definition.get('offset', None) is not None:
                 field_offset = int(field_definition.get('offset', None))
                 if add_header_size:
-                    field_offset += header_size
+                    field_offset += message_type.header_size
 
             unpack_fmt = endian
             field_length = field_type.get('length', None)
@@ -231,7 +231,7 @@ class SBESchema(object):
             if field_definition.get('offset', None) is not None:
                 field_offset = int(field_definition.get('offset', None))
                 if add_header_size:
-                    field_offset += header_size
+                    field_offset += message_type.header_size
 
             float_composite = False
             field_length = 0
@@ -345,10 +345,10 @@ class SBESchema(object):
         setattr(message_type, 'header_size', field_offset)
         return field_offset
 
-    def _add_fields(self, field_offset, entity, entity_type, endian, add_header_size=True):
+    def _add_fields(self, message_type, field_offset, entity, entity_type, endian, add_header_size=True):
         # Now run through the remaining types and update the fields
         for field_type in entity.get('fields', []):
-            field = self._build_message_field(field_type, field_offset, endian=endian, add_header_size=add_header_size)
+            field = self._build_message_field(message_type, field_type, field_offset, endian=endian, add_header_size=add_header_size)
             field_offset += field.field_length
             entity_type.fields.append(field)
             # make it an attribute too
@@ -400,7 +400,7 @@ class SBESchema(object):
                                                          dimension_size=block_field_offset,
                                                          since_version=group_since_version)
 
-            self._add_fields(group_field_offset, group_type, repeating_group, endian, add_header_size=False)
+            self._add_fields(entity, group_field_offset, group_type, repeating_group, endian, add_header_size=False)
 
             repeating_groups.append(repeating_group)
             setattr(entity_type, repeating_group.name, repeating_group)
@@ -413,7 +413,7 @@ class SBESchema(object):
     def _construct_body(self, message, field_offset, endian):
         message_id = int(message['id'])
         message_type = self.get_message_type(message_id)
-        self._add_fields(field_offset, message, message_type, endian, add_header_size=True)
+        self._add_fields(message_type, field_offset, message, message_type, endian, add_header_size=True)
         self._add_groups(message, message_type, endian)
 
     def parse(self, xml_file, message_tag="message", types_tag="types", endian='<'):
