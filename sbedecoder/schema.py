@@ -345,12 +345,10 @@ class SBESchema(object):
         setattr(message_type, 'header_size', field_offset)
         return field_offset
 
-    def _add_fields(self, field_offset, entity, entity_type, endian, add_header_size=True, header_size=10):
+    def _add_fields(self, field_offset, entity, entity_type, endian, add_header_size=True):
         # Now run through the remaining types and update the fields
         for field_type in entity.get('fields', []):
-            field_type['offset'] = None
-            field = self._build_message_field(field_type, field_offset, header_size=header_size, endian=endian,
-                                              add_header_size=add_header_size)
+            field = self._build_message_field(field_type, field_offset, endian=endian, add_header_size=add_header_size)
             field_offset += field.field_length
             entity_type.fields.append(field)
             # make it an attribute too
@@ -415,8 +413,7 @@ class SBESchema(object):
     def _construct_body(self, message, field_offset, endian):
         message_id = int(message['id'])
         message_type = self.get_message_type(message_id)
-        self._add_fields(field_offset, message, message_type, endian, add_header_size=True,
-                         header_size=message_type.header_size)
+        self._add_fields(field_offset, message, message_type, endian, add_header_size=True)
         self._add_groups(message, message_type, endian)
 
     def parse(self, xml_file, message_tag="message", types_tag="types", endian='<'):
