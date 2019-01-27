@@ -7,8 +7,8 @@ class SecDef(object):
         self.info = {}
 
     def load(self, secdef_filename):
-        tag_regexp = re.compile('(?:^|\x01)(48|55)=(.*?)(?=\x01)')
-        depth_regexp = re.compile('1022=GBX\x01264=(\d+)')
+        tag_regexp = re.compile(r'(?:^|\x01)(48|55)=(.*?)(?=\x01)')
+        depth_regexp = re.compile(r'1022=GBX\x01264=(\d+)')
         with gzip.open(secdef_filename, 'rb') as f:
             for line in f:
                 line = line.decode('UTF-8')
