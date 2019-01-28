@@ -368,9 +368,10 @@ class MDPMessageFactory(SBEMessageFactory):
         super(MDPMessageFactory, self).__init__(schema)
 
     def build(self, msg_buffer, offset):
-        # Peek at the template id to figure out what class to build
-        # this looks past the starting 2 byte message_size header that is CME specific
-        # and the 2 byte BlockHeader that starts all SBE Messages
+        # Peek at the template id to figure out what class to build.
+        # This looks past the starting 2 byte MsgSize header that is CME specific
+        # and the 2 byte BlockLength that starts all SBE Messages:
+        #   https://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP+3.0+-+Message+Header
         template_id = unpack_from('<H', msg_buffer, offset+4)[0]
         message_type = self.schema.get_message_type(template_id)
         message = message_type()
