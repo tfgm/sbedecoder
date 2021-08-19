@@ -9,7 +9,7 @@ Overview
 sbedecoder is a simple python package for parsing SBE encoded data.  
 
 sbedecoder dynamically generates an SBE parser from an xml description of the format. This is accomplished by
-creating an instance of `SBESchema()` and calling it's `parse()` method with a file name:
+creating an instance of `SBESchema()` and calling its `parse()` method with a file name:
 
     from sbedecoder import SBESchema
     schema = SBESchema()
@@ -24,7 +24,7 @@ more friendly name for the message. To use message descriptions as the name of t
 initialize your SBESchema with `use_description_as_message_name=True`.
 
 For convenience, an `MDPSchema()` subclass of `SBESchema()` is provided with `include_message_size_header=True`
-and `use_description_as_message_name=True` specifically to handle CME Group MDP 3.0 schema's.
+and `use_description_as_message_name=True` specifically to handle CME Group MDP 3.0 schemas.
 
 Messages are parsed from any structure that looks like a buffer containing the raw binary
 data (buffer, str, bytearay, etc).  To parse SBE encoded data into a message based on a
